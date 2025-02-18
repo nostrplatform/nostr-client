@@ -6,6 +6,9 @@ import {
   MailIcon,
   SearchIcon,
   RadioTowerIcon,
+  MenuIcon,
+  MoonIcon,
+  SunIcon,
 } from 'lucide-react';
 import { useActiveUser } from 'nostr-hooks';
 import { Link, Outlet, createBrowserRouter } from 'react-router-dom';
@@ -14,6 +17,8 @@ import { ActiveUserWidget } from '@/features/active-user-widget';
 import { LoginWidget } from '@/features/login-widget';
 import { SearchWidget } from '@/features/search-widget';
 import { TrendingNotesWidget } from '@/features/trending-notes-widget';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@radix-ui/react-dropdown-menu';
+import { Button } from 'react-day-picker';
 
 const Layout = () => {
   const { activeUser } = useActiveUser();
@@ -183,6 +188,15 @@ const Layout = () => {
               </Link>
 
               <Link
+                to="/relays"
+                className="flex items-center gap-2 transition-colors duration-500 ease-out text-primary/60 hover:text-primary"
+              >
+                <div>
+                  <RadioTowerIcon size={28} strokeWidth={1.4} />
+                </div>
+              </Link>
+                    
+              <Link
                 to="/notifications"
                 className="flex items-center gap-2 transition-colors duration-500 ease-out text-primary/60 hover:text-primary"
               >
@@ -191,40 +205,7 @@ const Layout = () => {
                 </div>
               </Link>
 
-              {/* <DropdownMenu>
-                <DropdownMenuTrigger>
-                  <div className="flex items-center gap-2 transition-colors duration-500 ease-out text-primary/60 hover:text-primary">
-                    <MenuIcon size={28} strokeWidth={1.4} />
-                  </div>
-                </DropdownMenuTrigger>
-
-                <DropdownMenuContent>
-
-                  <DropdownMenuItem>
-                    {theme === 'dark' ? (
-                      <Button
-                        variant="ghost"
-                        className="flex gap-2"
-                        onClick={() => setTheme('light')}
-                      >
-                        <SunIcon size={18} />
-
-                        <span>Switch to light</span>
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        className="flex gap-2"
-                        onClick={() => setTheme('dark')}
-                      >
-                        <MoonIcon size={18} />
-
-                        <span>Switch to dark</span>
-                      </Button>
-                    )}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu> */}
+ 
             </div>
           </div>
         </div>

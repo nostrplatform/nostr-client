@@ -1,5 +1,5 @@
 import { NDKEvent } from '@nostr-dev-kit/ndk';
-import { CornerDownRightIcon } from 'lucide-react';
+import { CornerDownRightIcon, ImageIcon, HashIcon, BoldIcon, ItalicIcon, LinkIcon } from 'lucide-react';
 import { useState } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
@@ -18,6 +18,17 @@ export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent 
   const onEmojiClick = (emojiData: any) => {
     setContent((prev) => prev + emojiData.emoji);
     setShowEmojiPicker(false);
+  };
+
+  const insertText = (prefix: string, suffix: string = '') => {
+    const textarea = document.querySelector('textarea');
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = content.substring(start, end);
+    const newText = content.substring(0, start) + prefix + selectedText + suffix + content.substring(end);
+    setContent(newText);
   };
 
   return (
@@ -49,22 +60,78 @@ export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent 
               />
               
               <div className="flex items-center gap-2">
-                <FloatingEmojiPicker
-                  isOpen={showEmojiPicker}
-                  onClose={() => setShowEmojiPicker(false)}
-                  onEmojiClick={onEmojiClick}
-                  variant="compact"
-                  position="bottom"
-                >
+                <div className="flex items-center gap-1 border rounded-md p-1">
+                  <FloatingEmojiPicker
+                    isOpen={showEmojiPicker}
+                    onClose={() => setShowEmojiPicker(false)}
+                    onEmojiClick={onEmojiClick}
+                    variant="compact"
+                    position="bottom"
+                  >
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                      className="h-8 w-8 hover:bg-muted"
+                    >
+                      😊
+                    </Button>
+                  </FloatingEmojiPicker>
+
+                  <div className="h-6 w-px bg-border/30" />
+
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                    className="h-8 w-8"
+                    disabled
+                    className="h-8 w-8 opacity-50 cursor-not-allowed"
+                    title="Bold (Coming soon)"
                   >
-                    😊
+                    <BoldIcon size={16} />
                   </Button>
-                </FloatingEmojiPicker>
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    disabled
+                    className="h-8 w-8 opacity-50 cursor-not-allowed"
+                    title="Italic (Coming soon)"
+                  >
+                    <ItalicIcon size={16} />
+                  </Button>
+
+                  <div className="h-6 w-px bg-border/30" />
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    disabled
+                    className="h-8 w-8 opacity-50 cursor-not-allowed"
+                    title="Add hashtag (Coming soon)"
+                  >
+                    <HashIcon size={16} />
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    disabled
+                    className="h-8 w-8 opacity-50 cursor-not-allowed"
+                    title="Add link (Coming soon)"
+                  >
+                    <LinkIcon size={16} />
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    disabled
+                    className="h-8 w-8 opacity-50 cursor-not-allowed"
+                    title="Attach image (Coming soon)"
+                  >
+                    <ImageIcon size={16} />
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
