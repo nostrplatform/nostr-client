@@ -52,7 +52,7 @@ export const NotesFeedWidget = () => {
         ) : processedEvents ? (
           <div className="pt-2 flex flex-col gap-2">
             {processedEvents.map((event) => (
-              <NoteByEvent event={event} />
+              <NoteByEvent key={event.id} event={event} />
             ))}
           </div>
         ) : (
