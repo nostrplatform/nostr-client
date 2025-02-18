@@ -19,7 +19,7 @@ export const AngorHub = () => {
         />
       ))}
       
-      {hasMore && (
+      {hasMore && projects && projects.length > 0 && (
         <div className="py-4 flex justify-center">
           <Button 
             variant="secondary" 
