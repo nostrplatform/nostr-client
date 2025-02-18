@@ -1,7 +1,5 @@
 import { NDKEvent } from '@nostr-dev-kit/ndk';
 import { CornerDownRightIcon } from 'lucide-react';
-import EmojiPicker, { Theme } from 'emoji-picker-react';
-import { useTheme } from '@/shared/components/theme-provider';
 import { useState } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
@@ -16,7 +14,6 @@ import { useNewNoteWidget } from './hooks';
 export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent | undefined }) => {
   const { content, post, setContent, profile } = useNewNoteWidget({ replyingToEvent });
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const { theme } = useTheme();
 
   const onEmojiClick = (emojiData: any) => {
     setContent((prev) => prev + emojiData.emoji);

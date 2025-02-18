@@ -1,7 +1,6 @@
 import { NDKEvent, NDKKind, NDKUser } from '@nostr-dev-kit/ndk';
 import { useActiveUser, useNdk, useSubscription } from 'nostr-hooks';
 import { memo, useCallback, useEffect, useMemo, useState, useRef } from 'react';
-import { useTheme } from '@/shared/components/theme-provider';
 import { FloatingEmojiPicker } from '@/shared/components/emoji-picker';
 
 import { Button } from '@/shared/components/ui/button';
@@ -18,7 +17,6 @@ export const ChatsList = memo(
 
     const { activeUser } = useActiveUser();
     const { ndk } = useNdk();
-    const { theme } = useTheme();
 
     const subId = activeUser ? `messages-${activeUser.pubkey}` : undefined;
     const { createSubscription, events } = useSubscription(subId);
