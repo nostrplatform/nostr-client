@@ -1,6 +1,8 @@
 import { NDKEvent, NDKKind, NDKUser } from '@nostr-dev-kit/ndk';
 import { useActiveUser, useNdk, useSubscription } from 'nostr-hooks';
 import { memo, useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import { useTheme } from '@/shared/components/theme-provider';
+import { FloatingEmojiPicker } from '@/shared/components/emoji-picker';
 
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -12,9 +14,11 @@ export const ChatsList = memo(
   ({ npub }: { npub: string }) => {
     const [input, setInput] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
     const { activeUser } = useActiveUser();
     const { ndk } = useNdk();
+    const { theme } = useTheme();
 
     const subId = activeUser ? `messages-${activeUser.pubkey}` : undefined;
     const { createSubscription, events } = useSubscription(subId);
@@ -43,9 +47,10 @@ export const ChatsList = memo(
         return [];
       }
 
+
       const targetPubkey = targetUser.pubkey;
 
-      return events.filter(
+      return (events ?? []).filter(
         (e) =>
           e.pubkey === targetPubkey || e.tags.some((t) => t[0] === 'p' && t[1] === targetPubkey),
       );
@@ -77,6 +82,11 @@ export const ChatsList = memo(
       setInput('');
     }, [ndk, activeUser, input, npub, setInput]);
 
+    const onEmojiClick = (emojiData: any) => {
+      setInput((prev) => prev + emojiData.emoji);
+      setShowEmojiPicker(false);
+    };
+
     return (
       <>
         <div className="w-full h-full overflow-hidden flex flex-col justify-between">
@@ -89,6 +99,23 @@ export const ChatsList = memo(
           </div>
 
           <div className="flex items-center gap-2 border-t p-4">
+            <FloatingEmojiPicker
+              isOpen={showEmojiPicker}
+              onClose={() => setShowEmojiPicker(false)}
+              onEmojiClick={onEmojiClick}
+              variant="compact"
+              position="top"
+            >
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                className="h-10 w-10"
+              >
+                😊
+              </Button>
+            </FloatingEmojiPicker>
+
             <Input
               type="text"
               value={input}

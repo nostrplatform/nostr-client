@@ -142,13 +142,13 @@ const Layout = () => {
             <div>{activeUser ? <ActiveUserWidget /> : <LoginWidget />}</div>
           </div>
 
-          <div className="h-full w-full pb-28 md:pb-0">
+          <div className="h-[calc(100vh-6.8rem)] md:h-full w-full overflow-y-auto">
             <Outlet />
           </div>
 
           <div
             id="controlbar"
-            className="fixed overflow-hidden w-full border-t px-4 py-2 bottom-0 z-10 bg-background md:hidden"
+            className="fixed overflow-hidden w-full border-t px-4 py-2 bottom-0 left-0 right-0 z-10 bg-background md:hidden"
           >
             <div className="flex flex-row gap-2 w-full items-center justify-between">
               <Link
