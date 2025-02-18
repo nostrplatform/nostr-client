@@ -16,55 +16,46 @@ export const useAngorHub = () => {
   const [isTotalFetched, setIsTotalFetched] = useState(false);
   const nostrService = AngorNostrService.getInstance();
 
-  const reset = useCallback(() => {
-    setProjects(undefined);
-    setStats({});
-    setOffset(INITIAL_OFFSET);
-    setTotalProjects(0);
-    setHasMore(true);
-    setIsLoading(false);
-    setIsTotalFetched(false);
-  }, []);
-
   const filterUniqueProjects = useCallback((newProjects: IndexedProject[], existingProjects: IndexedProject[] = []) => {
     return newProjects.filter(
       newProject => !existingProjects.some(
-        existing => existing.projectIdentifier === newProject.projectIdentifier
+        existing => existing.nostrEventId === newProject.nostrEventId
       )
     );
   }, []);
 
-  const fetchProjects = async (currentOffset: number) => {
+  const fetchProjects = useCallback(async (currentOffset: number) => {
     if (isLoading || !hasMore) return;
     
     setIsLoading(true);
     try {
+      // First fetch just to get total if needed
+      if (!isTotalFetched) {
+        const countRes = await fetch(`${INDEXER_URL}api/query/Angor/projects?limit=1`);
+        if (countRes.ok) {
+          const total = countRes.headers.get('pagination-total');
+          if (total) {
+            const totalCount = parseInt(total, 10);
+            setTotalProjects(totalCount);
+            setIsTotalFetched(true);
+            // Update offset but don't trigger another fetch
+            currentOffset = Math.max(totalCount - LIMIT, 0);
+            setOffset(currentOffset);
+          }
+        }
+      }
+
+      // Main fetch with correct offset
       const res = await fetch(
         `${INDEXER_URL}api/query/Angor/projects?limit=${LIMIT}&offset=${currentOffset}&sort=desc`
       );
       if (!res.ok) throw new Error('Failed to fetch projects');
 
-      // Get total count from headers if not fetched yet
-      if (!isTotalFetched) {
-        const total = res.headers.get('pagination-total');
-        if (total) {
-          setTotalProjects(parseInt(total, 10));
-          setIsTotalFetched(true);
-          // Start from the end
-          const newOffset = Math.max(parseInt(total, 10) - LIMIT, 0);
-          setOffset(newOffset);
-          // If different from current offset, fetch again with new offset
-          if (newOffset !== currentOffset) {
-            setIsLoading(false);
-            return fetchProjects(newOffset);
-          }
-        }
-      }
-
       const indexedProjects = await res.json() as IndexedProject[];
       const uniqueProjects = filterUniqueProjects(indexedProjects, projects || []);
       
-      if (uniqueProjects.length < LIMIT) {
+      // Check if we've reached the end
+      if (currentOffset === 0 || uniqueProjects.length === 0) {
         setHasMore(false);
       }
 
@@ -99,18 +90,30 @@ export const useAngorHub = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [projects, isLoading, hasMore, isTotalFetched, filterUniqueProjects, nostrService]);
 
   const loadMore = useCallback(() => {
-    if (offset > 0) {
+    if (!isLoading && hasMore) {
       const newOffset = Math.max(offset - LIMIT, 0);
       setOffset(newOffset);
       fetchProjects(newOffset);
     }
-  }, [offset]);
+  }, [offset, isLoading, hasMore, fetchProjects]);
 
   useEffect(() => {
-    fetchProjects(offset);
+    if (!projects) {
+      fetchProjects(offset);
+    }
+  }, [fetchProjects, offset, projects]);
+
+  const reset = useCallback(() => {
+    setProjects(undefined);
+    setStats({});
+    setOffset(INITIAL_OFFSET);
+    setTotalProjects(0);
+    setHasMore(true);
+    setIsLoading(false);
+    setIsTotalFetched(false);
   }, []);
 
   return { 
