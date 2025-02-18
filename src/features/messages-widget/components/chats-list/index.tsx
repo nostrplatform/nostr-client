@@ -1,6 +1,6 @@
 import { NDKEvent, NDKKind, NDKUser } from '@nostr-dev-kit/ndk';
 import { useActiveUser, useNdk, useSubscription } from 'nostr-hooks';
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState, useRef } from 'react';
 
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -11,6 +11,7 @@ import { ProfileHeader } from '../profile-header';
 export const ChatsList = memo(
   ({ npub }: { npub: string }) => {
     const [input, setInput] = useState('');
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const { activeUser } = useActiveUser();
     const { ndk } = useNdk();
@@ -50,6 +51,10 @@ export const ChatsList = memo(
       );
     }, [events, targetUser, activeUser]);
 
+    useEffect(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [chats]);
+
     const sendMessage = useCallback(async () => {
       if (!ndk || !activeUser) {
         return;
@@ -80,6 +85,7 @@ export const ChatsList = memo(
             {(chats || []).map((chat) => (
               <ChatItem key={chat.id} chat={chat} targetUser={targetUser} />
             ))}
+            <div ref={messagesEndRef} />
           </div>
 
           <div className="flex items-center gap-2 border-t p-4">
@@ -88,16 +94,17 @@ export const ChatsList = memo(
               value={input}
               onChange={(e) => setInput(e.target.value)}
               className="w-full"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && input.trim()) {
+                  e.preventDefault();
+                  sendMessage();
+                }
+              }}
             />
 
             <Button
               onClick={sendMessage}
               disabled={!input}
-              onKeyUp={(e) => {
-                if (e.key === 'Enter') {
-                  sendMessage();
-                }
-              }}
             >
               Send
             </Button>
