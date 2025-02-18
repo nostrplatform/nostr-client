@@ -1,4 +1,4 @@
-import NDK, { NDKEvent, NDKKind } from '@nostr-dev-kit/ndk';
+import NDK, { NDKKind } from '@nostr-dev-kit/ndk';
 import { ProjectUpdate, NostrProjectData, ProjectStats } from '../types';
 
 const INDEXER_URL = 'https://tbtc.indexer.angor.io/';
@@ -15,8 +15,6 @@ export class AngorNostrService {
   private isConnected = false;
   private projectCache: Map<string, NostrProjectData> = new Map();
   private statsCache: Map<string, ProjectStats> = new Map();
-  private subscriptions: Set<string> = new Set();
-  private pubkeyToProjectMap: Map<string, string> = new Map();
 
   private constructor() {
     this.ndk = new NDK({
@@ -44,26 +42,6 @@ export class AngorNostrService {
       console.error('Failed to connect to relays:', error);
       throw error;
     }
-  }
-
-  private async subscribeToProjectMetadata(pubkey: string) {
-    if (this.subscriptions.has(pubkey)) return;
-    
-    const ndk = await this.ensureConnected();
-    const sub = ndk.subscribe({ kinds: [0], authors: [pubkey] });
-    
-    sub.on('event', (event: NDKEvent) => {
-      const projectId = this.pubkeyToProjectMap.get(pubkey);
-      if (projectId) {
-        const cached = this.projectCache.get(projectId);
-        if (cached) {
-          cached.metadata = JSON.parse(event.content);
-          this.projectCache.set(projectId, cached);
-        }
-      }
-    });
-
-    this.subscriptions.add(pubkey);
   }
 
   async fetchProjectStats(projectId: string): Promise<ProjectStats | null> {

@@ -6,9 +6,6 @@ import {
   MailIcon,
   SearchIcon,
   RadioTowerIcon,
-  MenuIcon,
-  MoonIcon,
-  SunIcon,
 } from 'lucide-react';
 import { useActiveUser } from 'nostr-hooks';
 import { Link, Outlet, createBrowserRouter } from 'react-router-dom';
@@ -17,8 +14,6 @@ import { ActiveUserWidget } from '@/features/active-user-widget';
 import { LoginWidget } from '@/features/login-widget';
 import { SearchWidget } from '@/features/search-widget';
 import { TrendingNotesWidget } from '@/features/trending-notes-widget';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@radix-ui/react-dropdown-menu';
-import { Button } from 'react-day-picker';
 import { AngorHub } from '@/features/angor-hub';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs';
 
