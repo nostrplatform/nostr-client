@@ -5,11 +5,10 @@ import {
   HomeIcon,
   MailIcon,
   SearchIcon,
+  RadioTowerIcon,
 } from 'lucide-react';
 import { useActiveUser } from 'nostr-hooks';
 import { Link, Outlet, createBrowserRouter } from 'react-router-dom';
-
- 
 
 import { ActiveUserWidget } from '@/features/active-user-widget';
 import { LoginWidget } from '@/features/login-widget';
@@ -19,7 +18,6 @@ import { TrendingNotesWidget } from '@/features/trending-notes-widget';
 const Layout = () => {
   const { activeUser } = useActiveUser();
 
- 
   return (
     <>
       <div className="h-full w-full max-w-screen-xl mx-auto overflow-hidden grid grid-cols-1 md:grid-cols-12">
@@ -89,6 +87,16 @@ const Layout = () => {
               </div>
 
               <span className="hidden xl:block">Notifications</span>
+            </Link>
+
+            <Link
+              to="/relays"
+              className="flex items-center gap-2 p-2 transition-colors duration-500 ease-out text-primary/60 hover:text-primary w-full rounded-lg hover:bg-secondary"
+            >
+              <div>
+                <RadioTowerIcon size={24} />
+              </div>
+              <span className="hidden xl:block">Relays</span>
             </Link>
 
             <SearchWidget>
@@ -237,6 +245,7 @@ const NotePage = () => import('./note');
 const ProfilePage = () => import('./profile');
 const MessagesPage = () => import('./messages');
 const NotificationsPage = () => import('./notifications');
+const RelaysPage = () => import('./relays');
 
 export const router = createBrowserRouter([
   {
@@ -277,6 +286,12 @@ export const router = createBrowserRouter([
         path: '/notifications',
         async lazy() {
           return { Component: (await NotificationsPage()).NotificationsPage };
+        },
+      },
+      {
+        path: '/relays',
+        async lazy() {
+          return { Component: (await RelaysPage()).RelaysPage };
         },
       },
     ],

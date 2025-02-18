@@ -14,8 +14,11 @@ export const App = () => {
   const { loginFromLocalStorage } = useLogin();
 
   useEffect(() => {
+    const storedRelays = localStorage.getItem('nostr-relays');
+    const relays = storedRelays ? JSON.parse(storedRelays) : ['wss://nos.lol', 'wss://relay.primal.net', 'wss://relay.nostr.band'];
+    
     initNdk({
-      explicitRelayUrls: ['wss://nos.lol', 'wss://relay.primal.net', 'wss://relay.nostr.band'],
+      explicitRelayUrls: relays,
     });
   }, [initNdk]);
 
