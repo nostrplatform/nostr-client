@@ -1,6 +1,7 @@
 import { PowerIcon, UserIcon, MoonIcon, SunIcon } from 'lucide-react';
 import { useActiveUser, useLogin, useRealtimeProfile } from 'nostr-hooks';
 import { useNavigate } from 'react-router-dom';
+import { useRef } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
 import {
@@ -21,8 +22,8 @@ export const ActiveUserWidget = () => {
   const { profile } = useRealtimeProfile(activeUser?.pubkey);
   const { logout } = useLogin();
   const { setTheme, theme } = useTheme();
-
   const navigate = useNavigate();
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   if (!activeUser) {
     return null;
@@ -30,8 +31,8 @@ export const ActiveUserWidget = () => {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger>
-        <div className="flex items-center gap-2 cursor-pointer bg-secondary rounded-full xl:pl-1 xl:pr-2 xl:py-1">
+      <DropdownMenuTrigger ref={triggerRef}>
+        <button className="flex items-center gap-2 cursor-pointer bg-secondary rounded-full xl:pl-1 xl:pr-2 xl:py-1">
           <Avatar>
             <AvatarImage src={profile?.image} alt={profile?.name} className="object-cover" />
             <AvatarFallback className="bg-background/50" />
@@ -43,10 +44,10 @@ export const ActiveUserWidget = () => {
               {profile?.nip05?.toString() || ellipsis(activeUser.npub, 10)}
             </div>
           </div>
-        </div>
+        </button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" sideOffset={8}>
+      <DropdownMenuContent align="end" sideOffset={8} style={{ width: triggerRef.current?.offsetWidth }}>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{profile?.name}</p>
@@ -56,8 +57,9 @@ export const ActiveUserWidget = () => {
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => navigate(`/profile/${activeUser.npub}`)}>
           <UserIcon className="w-4 h-4 mr-2" />
-          Profile
+          <span>Profile</span>
         </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem>
           {theme === 'dark' ? (
             <Button
@@ -82,7 +84,7 @@ export const ActiveUserWidget = () => {
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={logout}>
           <PowerIcon className="w-4 h-4 mr-2" />
-          Logout
+          <span>Logout</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

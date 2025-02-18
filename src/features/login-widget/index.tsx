@@ -87,6 +87,16 @@ export const LoginWidget = () => {
                         Alby
                       </a>
                     </Button>
+                    {' or '}
+                    <Button variant="link" className="p-0 text-blue-600" asChild>
+                      <a
+                        href="https://chromewebstore.google.com/detail/blockcore-wallet/peigonhbenoefaeplkpalmafieegnapj"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Blockcore Wallet
+                      </a>
+                    </Button>
                   </Muted>
                 </div>
               </TabsContent>
