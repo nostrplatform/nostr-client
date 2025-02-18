@@ -1,10 +1,11 @@
 import { Muted } from '@/shared/components/ui/typography/muted';
 import { Spinner } from '@/shared/components/spinner';
+import { Button } from '@/shared/components/ui/button';
 import { ProjectItem } from './components';
 import { useAngorHub } from './hooks';
 
 export const AngorHub = () => {
-  const { projects, stats } = useAngorHub();
+  const { projects, stats, loadMore, hasMore, isLoading } = useAngorHub();
 
   return (
     <div className="flex flex-col gap-2 w-full h-full overflow-y-auto overflow-x-hidden">
@@ -17,6 +18,19 @@ export const AngorHub = () => {
           stats={stats[project.projectIdentifier]} 
         />
       ))}
+      
+      {hasMore && (
+        <div className="py-4 flex justify-center">
+          <Button 
+            variant="secondary" 
+            onClick={loadMore} 
+            className="w-full"
+            disabled={isLoading}
+          >
+            {isLoading ? <Spinner/> : 'Load more'}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
