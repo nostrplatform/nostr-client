@@ -20,18 +20,7 @@ export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent 
     setShowEmojiPicker(false);
   };
 
-  const insertText = (prefix: string, suffix: string = '') => {
-    const textarea = document.querySelector('textarea');
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = content.substring(start, end);
-    const newText = content.substring(0, start) + prefix + selectedText + suffix + content.substring(end);
-    setContent(newText);
-  };
-
-  return (
+   return (
     <>
       <div className="px-2">
         <div
