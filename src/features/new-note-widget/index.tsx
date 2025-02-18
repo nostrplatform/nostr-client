@@ -53,7 +53,7 @@ export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent 
                   isOpen={showEmojiPicker}
                   onClose={() => setShowEmojiPicker(false)}
                   onEmojiClick={onEmojiClick}
-                  variant="full"
+                  variant="compact"
                   position="bottom"
                 >
                   <Button
