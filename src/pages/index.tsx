@@ -4,23 +4,12 @@ import {
   CompassIcon,
   HomeIcon,
   MailIcon,
-  MenuIcon,
-  MoonIcon,
   SearchIcon,
-  SunIcon,
 } from 'lucide-react';
 import { useActiveUser } from 'nostr-hooks';
 import { Link, Outlet, createBrowserRouter } from 'react-router-dom';
 
-import { Button } from '@/shared/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/shared/components/ui/dropdown-menu';
-
-import { useTheme } from '@/shared/components/theme-provider';
+ 
 
 import { ActiveUserWidget } from '@/features/active-user-widget';
 import { LoginWidget } from '@/features/login-widget';
@@ -30,8 +19,7 @@ import { TrendingNotesWidget } from '@/features/trending-notes-widget';
 const Layout = () => {
   const { activeUser } = useActiveUser();
 
-  const { setTheme, theme } = useTheme();
-
+ 
   return (
     <>
       <div className="h-full w-full max-w-screen-xl mx-auto overflow-hidden grid grid-cols-1 md:grid-cols-12">
