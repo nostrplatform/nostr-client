@@ -9,9 +9,7 @@ export const TrendingNotesWidget = () => {
   const { trendingNotes } = useTrendingNotesWidget();
 
   return (
-    <div className="flex flex-col gap-2 w-full overflow-y-auto overflow-x-hidden">
-      <h2 className="text-lg font-bold">Trending Notes (24h)</h2>
-
+    <div className="flex flex-col gap-2 w-full h-full overflow-y-auto overflow-x-hidden">
       {trendingNotes === undefined && <Spinner />}
 
       {trendingNotes === null && <Muted>Failed to fetch trending notes</Muted>}

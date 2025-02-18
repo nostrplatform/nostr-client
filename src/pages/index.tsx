@@ -19,6 +19,8 @@ import { SearchWidget } from '@/features/search-widget';
 import { TrendingNotesWidget } from '@/features/trending-notes-widget';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@radix-ui/react-dropdown-menu';
 import { Button } from 'react-day-picker';
+import { AngorHub } from '@/features/angor-hub';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs';
 
 const Layout = () => {
   const { activeUser } = useActiveUser();
@@ -212,9 +214,30 @@ const Layout = () => {
 
         <div
           id="rightbar"
-          className="hidden border-l flex-col gap-2 overflow-hidden items-center p-2 lg:flex lg:col-span-3"
+          className="hidden border-l flex-col h-screen overflow-hidden items-center p-2 lg:flex lg:col-span-3"
         >
-          <TrendingNotesWidget />
+          <Tabs defaultValue="trending" className="w-full h-full flex flex-col">
+            <TabsList className="w-full grid grid-cols-2 mb-4">
+              <TabsTrigger 
+                value="trending"
+                className="py-2 text-primary/60 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary transition-colors"
+              >
+                Trending Notes
+              </TabsTrigger>
+              <TabsTrigger 
+                value="angor"
+                className="py-2 text-primary/60 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary transition-colors"
+              >
+                Angor Projects
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="trending" className="flex-1 overflow-auto">
+              <TrendingNotesWidget />
+            </TabsContent>
+            <TabsContent value="angor" className="flex-1 overflow-auto">
+              <AngorHub />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </>
