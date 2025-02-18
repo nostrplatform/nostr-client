@@ -14,42 +14,53 @@ import { useNewNoteWidget } from './hooks';
 export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent | undefined }) => {
   const { content, post, setContent, profile } = useNewNoteWidget({ replyingToEvent });
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   const onEmojiClick = (emojiData: any) => {
     setContent((prev) => prev + emojiData.emoji);
     setShowEmojiPicker(false);
   };
 
+  const characterCount = content.length;
+  const maxCharacters = 280;
+
    return (
-    <>
-      <div className="px-2">
-        <div
-          className={cn(
-            'p-2 flex flex-col gap-2 border rounded-sm bg-primary/10 shadow-md transition-colors duration-500 ease-out hover:border-primary/30',
-            replyingToEvent && '-mx-2 pl-4',
-          )}
-        >
-          <div className="flex gap-2">
+    <div className="px-4 py-3">
+      <div
+        className={cn(
+          'rounded-xl bg-background border transition-all duration-200',
+          isFocused ? 'shadow-lg border-primary/30' : 'shadow-sm hover:border-muted-foreground/30',
+          replyingToEvent && 'ml-6 border-l-4 border-l-primary/20'
+        )}
+      >
+        <div className="p-4">
+          <div className="flex gap-3">
             {replyingToEvent && (
-              <div className="pt-2 opacity-50">
-                <CornerDownRightIcon size={18} />
+              <div className="absolute -ml-8 mt-2 text-muted-foreground">
+                <CornerDownRightIcon size={16} />
               </div>
             )}
 
-            <Avatar>
+            <Avatar className="h-10 w-10">
               <AvatarImage src={profile?.image} alt={profile?.name} className="object-cover" />
               <AvatarFallback className="bg-muted" />
             </Avatar>
 
-            <div className="flex-1 flex flex-col gap-2">
-              <Textarea
-                className="bg-background w-full"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-              />
-              
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 border rounded-md p-1">
+            <div className="flex-1 flex flex-col gap-3">
+              <div className="flex gap-2 relative">
+                <Textarea
+                  className="bg-background w-full min-h-[100px] resize-none p-0 border-0 focus-visible:ring-0"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setIsFocused(false)}
+                  placeholder="What's on your mind?"
+                  maxLength={maxCharacters}
+                />
+              </div>
+
+              <div className="flex items-center justify-between border-t pt-3 mt-1">
+                <div className="flex items-center gap-0.5">
                   <FloatingEmojiPicker
                     isOpen={showEmojiPicker}
                     onClose={() => setShowEmojiPicker(false)}
@@ -61,77 +72,51 @@ export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent 
                       variant="ghost"
                       size="icon"
                       onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                      className="h-8 w-8 hover:bg-muted"
+                      className="h-9 w-9 rounded-full hover:bg-muted"
                     >
                       😊
                     </Button>
                   </FloatingEmojiPicker>
 
-                  <div className="h-6 w-px bg-border/30" />
-
                   <Button
                     variant="ghost"
                     size="icon"
-                    disabled
-                    className="h-8 w-8 opacity-50 cursor-not-allowed"
-                    title="Bold (Coming soon)"
+                    className="h-9 w-9 rounded-full hover:bg-muted"
+                    title="Attach image"
                   >
-                    <BoldIcon size={16} />
+                    <ImageIcon size={18} />
                   </Button>
 
                   <Button
                     variant="ghost"
                     size="icon"
-                    disabled
-                    className="h-8 w-8 opacity-50 cursor-not-allowed"
-                    title="Italic (Coming soon)"
+                    className="h-9 w-9 rounded-full hover:bg-muted"
+                    title="Add hashtag"
                   >
-                    <ItalicIcon size={16} />
+                    <HashIcon size={18} />
                   </Button>
+                </div>
 
-                  <div className="h-6 w-px bg-border/30" />
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    disabled
-                    className="h-8 w-8 opacity-50 cursor-not-allowed"
-                    title="Add hashtag (Coming soon)"
+                <div className="flex items-center gap-3">
+                  <span className={cn(
+                    "text-sm",
+                    characterCount > maxCharacters * 0.9 ? "text-destructive" : "text-muted-foreground"
+                  )}>
+                    {characterCount}/{maxCharacters}
+                  </span>
+                  <Button 
+                    onClick={post}
+                    disabled={characterCount === 0 || characterCount > maxCharacters}
+                    className="rounded-full px-6"
                   >
-                    <HashIcon size={16} />
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    disabled
-                    className="h-8 w-8 opacity-50 cursor-not-allowed"
-                    title="Add link (Coming soon)"
-                  >
-                    <LinkIcon size={16} />
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    disabled
-                    className="h-8 w-8 opacity-50 cursor-not-allowed"
-                    title="Attach image (Coming soon)"
-                  >
-                    <ImageIcon size={16} />
+                    Post
                   </Button>
                 </div>
               </div>
             </div>
           </div>
-
-          <div className="w-full flex justify-end">
-            <Button className="px-8" size="sm" onClick={post}>
-              Post
-            </Button>
-          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
