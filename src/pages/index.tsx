@@ -195,7 +195,7 @@ const Layout = () => {
                 </div>
               </Link>
 
-              <DropdownMenu>
+              {/* <DropdownMenu>
                 <DropdownMenuTrigger>
                   <div className="flex items-center gap-2 transition-colors duration-500 ease-out text-primary/60 hover:text-primary">
                     <MenuIcon size={28} strokeWidth={1.4} />
@@ -228,7 +228,7 @@ const Layout = () => {
                     )}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
-              </DropdownMenu>
+              </DropdownMenu> */}
             </div>
           </div>
         </div>

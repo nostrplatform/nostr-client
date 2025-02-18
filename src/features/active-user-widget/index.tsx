@@ -1,4 +1,4 @@
-import { PowerIcon, UserIcon } from 'lucide-react';
+import { PowerIcon, UserIcon, MoonIcon, SunIcon } from 'lucide-react';
 import { useActiveUser, useLogin, useRealtimeProfile } from 'nostr-hooks';
 import { useNavigate } from 'react-router-dom';
 
@@ -9,14 +9,18 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
 } from '@/shared/components/ui/dropdown-menu';
 
 import { ellipsis } from '@/shared/utils';
+import { useTheme } from '@/shared/components/theme-provider';
+import { Button } from '@/shared/components/ui/button';
 
 export const ActiveUserWidget = () => {
   const { activeUser } = useActiveUser();
   const { profile } = useRealtimeProfile(activeUser?.pubkey);
   const { logout } = useLogin();
+  const { setTheme, theme } = useTheme();
 
   const navigate = useNavigate();
 
@@ -43,9 +47,37 @@ export const ActiveUserWidget = () => {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" sideOffset={8}>
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium leading-none">{profile?.name}</p>
+            <p className="text-xs leading-none text-muted-foreground">{profile?.nip05}</p>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => navigate(`/profile/${activeUser.npub}`)}>
           <UserIcon className="w-4 h-4 mr-2" />
           Profile
+        </DropdownMenuItem>
+        <DropdownMenuItem>
+          {theme === 'dark' ? (
+            <Button
+              variant="ghost"
+              className="flex w-full gap-2 justify-start p-0"
+              onClick={() => setTheme('light')}
+            >
+              <SunIcon size={18} />
+              <span>Light mode</span>
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              className="flex w-full gap-2 justify-start p-0"
+              onClick={() => setTheme('dark')}
+            >
+              <MoonIcon size={18} />
+              <span>Dark mode</span>
+            </Button>
+          )}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={logout}>
