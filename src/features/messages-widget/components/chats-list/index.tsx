@@ -6,6 +6,7 @@ import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 
 import { ChatItem } from '../chat-item';
+import { ProfileHeader } from '../profile-header';
 
 export const ChatsList = memo(
   ({ npub }: { npub: string }) => {
@@ -73,7 +74,8 @@ export const ChatsList = memo(
 
     return (
       <>
-        <div className="w-full h-full overflow-hidden flex flex-col justify-between gap-4">
+        <div className="w-full h-full overflow-hidden flex flex-col justify-between">
+          <ProfileHeader user={targetUser} />
           <div className="flex flex-col gap-4 overflow-y-auto h-full w-full p-4">
             {(chats || []).map((chat) => (
               <ChatItem key={chat.id} chat={chat} targetUser={targetUser} />
