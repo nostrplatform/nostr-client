@@ -1,5 +1,5 @@
 import { NDKEvent } from '@nostr-dev-kit/ndk';
-import { CornerDownRightIcon, ImageIcon, HashIcon, BoldIcon, ItalicIcon, LinkIcon } from 'lucide-react';
+import { CornerDownRightIcon, ImageIcon, HashIcon } from 'lucide-react';
 import { useState } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
