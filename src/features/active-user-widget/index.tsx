@@ -1,8 +1,10 @@
-import { PowerIcon, UserIcon, MoonIcon, SunIcon } from 'lucide-react';
+import { pdf } from '@react-pdf/renderer';
+import { saveAs } from 'file-saver';
+import { PowerIcon, UserIcon, MoonIcon, SunIcon, KeySquareIcon } from 'lucide-react';
 import { useActiveUser, useLogin, useRealtimeProfile } from 'nostr-hooks';
 import { useNavigate } from 'react-router-dom';
-import { useRef } from 'react';
-
+import { useCallback, useRef } from 'react';
+import { CredentialsDocument } from '@/features/credentials-document';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
 import {
   DropdownMenu,
@@ -20,10 +22,23 @@ import { Button } from '@/shared/components/ui/button';
 export const ActiveUserWidget = () => {
   const { activeUser } = useActiveUser();
   const { profile } = useRealtimeProfile(activeUser?.pubkey);
-  const { logout } = useLogin();
-  const { setTheme, theme } = useTheme();
+   const { setTheme, theme } = useTheme();
   const navigate = useNavigate();
   const triggerRef = useRef<HTMLButtonElement>(null);
+
+  const { logout, loginData } = useLogin();
+
+
+  const downloadCredentials = useCallback(
+    async ({ npub, nsec }: { npub: string; nsec: string }) => {
+      const fileName = 'credentials.pdf';
+      const blob = await pdf(<CredentialsDocument npub={npub} nsec={nsec} />).toBlob();
+      saveAs(blob, fileName);
+    },
+    [],
+  );
+
+
 
   if (!activeUser) {
     return null;
@@ -60,6 +75,17 @@ export const ActiveUserWidget = () => {
           <span>Profile</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
+
+        <DropdownMenuItem
+            onClick={() =>
+              downloadCredentials({ npub: activeUser.npub, nsec: loginData.privateKey || '' })
+            }
+          >
+            <KeySquareIcon className="w-4 h-4 mr-2" />
+            Credentials (PDF)
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+
         <DropdownMenuItem>
           {theme === 'dark' ? (
             <Button
@@ -82,7 +108,15 @@ export const ActiveUserWidget = () => {
           )}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={logout}>
+        <DropdownMenuItem 
+            onClick={() =>
+              downloadCredentials({
+                npub: activeUser.npub,
+                nsec: loginData.privateKey || '',
+              }).then(() => logout())
+            }
+
+        >
           <PowerIcon className="w-4 h-4 mr-2" />
           <span>Logout</span>
         </DropdownMenuItem>
