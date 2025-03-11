@@ -1,9 +1,10 @@
-import { pdf } from '@react-pdf/renderer';
+import { pdf, Document, Page, View, Text, Image } from '@react-pdf/renderer';
 import { saveAs } from 'file-saver';
 import { PowerIcon, UserIcon, MoonIcon, SunIcon, KeySquareIcon } from 'lucide-react';
 import { useActiveUser, useLogin, useRealtimeProfile } from 'nostr-hooks';
 import { useNavigate } from 'react-router-dom';
 import { useCallback, useRef } from 'react';
+import QRCode from 'qrcode';
 import { CredentialsDocument } from '@/features/credentials-document';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
 import {
@@ -31,9 +32,88 @@ export const ActiveUserWidget = () => {
 
   const downloadCredentials = useCallback(
     async ({ npub, nsec }: { npub: string; nsec: string }) => {
-      const fileName = 'credentials.pdf';
-      const blob = await pdf(<CredentialsDocument npub={npub} nsec={nsec} />).toBlob();
-      saveAs(blob, fileName);
+      try {
+        // Generate QR codes first
+        const npubQR = await QRCode.toDataURL(npub, { 
+          errorCorrectionLevel: 'H',
+          margin: 1,
+          width: 300
+        });
+        
+        let nsecQR = '';
+        if (nsec && nsec.trim() !== '') {
+          nsecQR = await QRCode.toDataURL(nsec, { 
+            errorCorrectionLevel: 'H',
+            margin: 1,
+            width: 300
+          });
+        }
+        
+        // Dynamic message based on available credentials
+        const getSecurityMessage = () => {
+          const hasBoth = npub && nsec && npub.trim() !== '' && nsec.trim() !== '';
+          const hasAny = (npub && npub.trim() !== '') || (nsec && nsec.trim() !== '');
+          
+          if (hasBoth) {
+            return "Please keep these credentials somewhere safe. We recommend keeping one print-out stored in a secure place.";
+          } else if (hasAny) {
+            return "Please keep this credential somewhere safe. We recommend keeping one print-out stored in a secure place.";
+          }
+          
+          return "";
+        };
+        
+        // Create temporary component with pre-generated QR codes
+        const CredentialsWithQR = () => (
+          <Document>
+            <Page size="A4" style={{
+              justifyContent: 'center',
+              textAlign: 'center',
+            }}>
+              <View style={{ margin: 10, padding: 10, flexGrow: 1 }}>
+                <Text style={{ fontSize: 20, fontWeight: 'bold' }}>Nostr Platform Credentials</Text>
+              </View>
+              
+              {nsec && (
+                <View style={{ alignItems: 'center', marginBottom: 20 }}>
+                  <Text style={{ fontSize: 16, fontWeight: 'bold' }}>Secret Key:</Text>
+                  <Text style={{ fontSize: 12 }}>{nsec}</Text>
+                  {nsecQR && (
+                    <View style={{ alignItems: 'center', marginTop: 10, marginBottom: 20 }}>
+                      <Image style={{ width: 180, height: 180 }} src={nsecQR} />
+                    </View>
+                  )}
+                </View>
+              )}
+              
+              {npub && (
+                <View style={{ alignItems: 'center', marginBottom: 20 }}>
+                  <Text style={{ fontSize: 16, fontWeight: 'bold' }}>Public Key:</Text>
+                  <Text style={{ fontSize: 12 }}>{npub}</Text>
+                  {npubQR && (
+                    <View style={{ alignItems: 'center', marginTop: 10, marginBottom: 20 }}>
+                      <Image style={{ width: 180, height: 180 }} src={npubQR} />
+                    </View>
+                  )}
+                </View>
+              )}
+              
+              <View style={{ margin: 10, padding: 10, flexGrow: 1 }}>
+                <Text style={{ fontSize: 10, color: 'gray' }}>
+                  {getSecurityMessage()}
+                </Text>
+              </View>
+            </Page>
+          </Document>
+        );
+        
+        const fileName = 'credentials.pdf';
+        const blob = await pdf(<CredentialsWithQR />).toBlob();
+        saveAs(blob, fileName);
+      } catch (error) {
+        console.error("Failed to generate credentials PDF:", error);
+        alert("Failed to generate credentials. Please try again.");
+      }
     },
     [],
   );
