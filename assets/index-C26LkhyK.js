@@ -1,0 +1,11 @@
+import{g as y,p as u,f as x,j as s,I as v,B as o}from"./index-BxbsnC9l.js";import{r as d}from"./react-stuff-BXf_FtOc.js";import"./nostr-dev-kit-CSjjAmPj.js";import"./zustand-FIKreLRA.js";/**
+ * @license lucide-react v0.462.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const R=y("Plus",[["path",{d:"M5 12h14",key:"1ays0h"}],["path",{d:"M12 5v14",key:"s699le"}]]);/**
+ * @license lucide-react v0.462.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const j=y("Trash",[["path",{d:"M3 6h18",key:"d0wm0j"}],["path",{d:"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6",key:"4alrt4"}],["path",{d:"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2",key:"v07s0e"}]]),b=()=>{const{toast:a}=u(),{ndk:t}=x(),[l,n]=d.useState(""),[r,c]=d.useState(()=>{const e=localStorage.getItem("nostr-relays");return e?JSON.parse(e):["wss://nos.lol","wss://relay.primal.net","wss://relay.nostr.band"]}),h=()=>{if(!l.startsWith("wss://")){a({title:"Invalid relay URL",description:"Relay URL must start with wss://",variant:"destructive"});return}if(r.includes(l)){a({title:"Relay already exists",description:"This relay is already in the list",variant:"destructive"});return}const e=[...r,l];c(e),localStorage.setItem("nostr-relays",JSON.stringify(e)),n(""),t==null||t.connect(),a({title:"Relay added",description:"The relay has been added successfully"})},m=e=>{const i=r.filter(p=>p!==e);c(i),localStorage.setItem("nostr-relays",JSON.stringify(i)),t==null||t.connect(),a({title:"Relay removed",description:"The relay has been removed successfully"})};return s.jsxs("div",{className:"p-4",children:[s.jsx("h1",{className:"text-2xl font-bold mb-4",children:"Manage Relays"}),s.jsxs("div",{className:"flex gap-2 mb-6",children:[s.jsx(v,{placeholder:"wss://relay.example.com",value:l,onChange:e=>n(e.target.value)}),s.jsxs(o,{onClick:h,children:[s.jsx(R,{className:"w-4 h-4 mr-2"}),"Add Relay"]})]}),s.jsx("div",{className:"space-y-2",children:r.map(e=>s.jsxs("div",{className:"flex items-center justify-between p-3 border rounded",children:[s.jsx("span",{children:e}),s.jsx(o,{variant:"ghost",size:"sm",onClick:()=>m(e),children:s.jsx(j,{className:"w-4 h-4"})})]},e))})]})};export{b as RelaysPage};

@@ -1,0 +1,1 @@
+import{j as o}from"./index-BxbsnC9l.js";import{b as r}from"./index-B2w8MDzb.js";import{i as s}from"./react-stuff-BXf_FtOc.js";import"./nostr-dev-kit-CSjjAmPj.js";import"./zustand-FIKreLRA.js";import"./index-DCZTf1m2.js";const f=()=>{const{noteId:t}=s();return o.jsx("div",{className:"pt-2 h-full w-full overflow-y-auto",children:o.jsx(r,{noteId:t})})};export{f as NotePage};
