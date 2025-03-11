@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { nip19 } from 'nostr-tools';
 import { Avatar, AvatarImage } from '@/shared/components/ui/avatar';
 import { ellipsis } from '@/shared/utils';
+import { satoshiToBitcoin } from '@/shared/utils/bitcoin';
 import { IndexedProject, ProjectStats } from '../../types';
 
 export const ProjectItem = memo(
@@ -43,7 +44,7 @@ export const ProjectItem = memo(
 
           {stats && (
             <p className="text-xs text-primary/40 mt-1">
-              {stats.amountInvested} sats invested
+              {satoshiToBitcoin(stats.amountInvested)} BTC invested
             </p>
           )}
         </div>
