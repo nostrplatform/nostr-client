@@ -3,26 +3,41 @@ import { useRealtimeProfile } from 'nostr-hooks';
 import { neventEncode } from 'nostr-tools/nip19';
 import { memo, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize from 'rehype-sanitize';
+import remarkBreaks from 'remark-breaks';
+import 'github-markdown-css/github-markdown.css';
+import 'highlight.js/styles/github-dark.css';
+import './index.css';
 
 import { ellipsis } from '@/shared/utils';
 
 import { NoteByNoteId } from '@/features/note-widget';
 
 import { useNoteContent } from './hooks';
+import { MarkdownRenderers } from './renderers';
 
 export const NoteContent = memo(
   ({ event }: { event: NDKEvent }) => {
     const { chunks, inView, ref } = useNoteContent(event.content);
 
     return (
-      <div ref={ref}>
+      <div ref={ref} className="markdown-body bg-transparent">
         {chunks.map((chunk, index) => {
           switch (chunk.type) {
             case 'text':
             case 'naddr':
               return (
-                <span key={index} className="[overflow-wrap:anywhere]">
-                  {chunk.content}
+                <span key={index} className="whitespace-pre-wrap [overflow-wrap:anywhere]">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm, remarkBreaks]}
+                    rehypePlugins={[rehypeRaw, rehypeSanitize]}
+                    components={MarkdownRenderers}
+                  >
+                    {chunk.content}
+                  </ReactMarkdown>
                 </span>
               );
             case 'image':

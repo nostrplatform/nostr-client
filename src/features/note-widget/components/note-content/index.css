@@ -1,0 +1,9 @@
+.markdown-body {
+  background-color: transparent !important;
+  color: inherit !important;
+}
+
+.markdown-body pre,
+.markdown-body code {
+  background-color: var(--background-secondary) !important;
+}
