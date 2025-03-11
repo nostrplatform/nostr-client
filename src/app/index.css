@@ -104,6 +104,27 @@
   small {
     @apply text-sm font-medium leading-none;
   }
+  
+  /* Remove focus outlines */
+  *:focus {
+    outline: none !important;
+  }
+  
+  *:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    border-color: inherit !important;
+    ring-width: 0 !important;
+    --ring-width: 0 !important;
+    --ring-offset-width: 0 !important;
+  }
+  
+  /* Override shadcn UI focus styles */
+  .ring-offset-background:focus-visible {
+    --tw-ring-offset-width: 0px !important;
+    --tw-ring-width: 0px !important;
+    box-shadow: none !important;
+  }
 }
 
 ::-webkit-scrollbar {
