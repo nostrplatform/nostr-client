@@ -1,10 +1,17 @@
 import { NDKKind } from '@nostr-dev-kit/ndk';
 import { useActiveUser, useSubscription } from 'nostr-hooks';
-import { memo, useEffect, useMemo } from 'react';
-
+import { memo, useEffect, useMemo, useState } from 'react';
+import { Input } from '@/shared/components/ui/input';
 import { UserItem } from '../user-item';
 
+const normalizeText = (text: string | undefined) => 
+  text?.toLowerCase()
+     .normalize('NFD')
+     .replace(/[\u0300-\u036f]/g, '')
+     .trim() || '';
+
 export const UsersList = memo(() => {
+  const [searchQuery, setSearchQuery] = useState('');
   const { activeUser } = useActiveUser();
 
   const subId = activeUser ? `messages-${activeUser.pubkey}` : undefined;
@@ -54,10 +61,25 @@ export const UsersList = memo(() => {
   }, [events, activeUser]);
 
   return (
-    <div className="flex flex-col w-full h-full overflow-y-auto overflow-x-hidden">
-      {sortedUsers.map((pubkey) => (
-        <UserItem key={pubkey} pubkey={pubkey} />
-      ))}
+    <div className="flex flex-col w-full h-full">
+      <div className="p-4 border-b">
+        <Input
+          type="search"
+          placeholder="Search by name, npub or NIP-05..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full"
+        />
+      </div>
+      <div className="flex-1 overflow-y-auto overflow-x-hidden">
+        {sortedUsers.map((pubkey) => (
+          <UserItem 
+            key={pubkey} 
+            pubkey={pubkey} 
+            searchQuery={searchQuery}
+          />
+        ))}
+      </div>
     </div>
   );
 });
