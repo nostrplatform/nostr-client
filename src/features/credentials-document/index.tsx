@@ -1,5 +1,4 @@
 import { Document, Page, StyleSheet, Text, View, Image } from '@react-pdf/renderer';
-import { useEffect, useState, useRef } from 'react';
 import QRCode from 'qrcode';
 
 const styles = StyleSheet.create({

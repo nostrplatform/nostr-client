@@ -4,12 +4,6 @@ import { memo, useEffect, useMemo, useState } from 'react';
 import { Input } from '@/shared/components/ui/input';
 import { UserItem } from '../user-item';
 
-const normalizeText = (text: string | undefined) => 
-  text?.toLowerCase()
-     .normalize('NFD')
-     .replace(/[\u0300-\u036f]/g, '')
-     .trim() || '';
-
 export const UsersList = memo(() => {
   const [searchQuery, setSearchQuery] = useState('');
   const { activeUser } = useActiveUser();

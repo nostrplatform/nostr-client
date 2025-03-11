@@ -5,7 +5,6 @@ import { useActiveUser, useLogin, useRealtimeProfile } from 'nostr-hooks';
 import { useNavigate } from 'react-router-dom';
 import { useCallback, useRef } from 'react';
 import QRCode from 'qrcode';
-import { CredentialsDocument } from '@/features/credentials-document';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
 import {
   DropdownMenu,
