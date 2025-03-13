@@ -22,6 +22,16 @@ interface NoteReactionsModalProps {
   onClose?: () => void;
 }
 
+const LoadingUser = () => (
+  <div className="flex items-center gap-3 p-3 animate-pulse">
+    <div className="h-8 w-8 rounded-full bg-muted" />
+    <div className="flex-1 space-y-2">
+      <div className="h-4 w-24 bg-muted rounded" />
+      <div className="h-3 w-32 bg-muted rounded" />
+    </div>
+  </div>
+);
+
 export const NoteReactionsModal = ({ event, onClose }: NoteReactionsModalProps) => {
   const { likes, zaps, isLoading } = useNoteReactions(event);
 
@@ -47,8 +57,10 @@ export const NoteReactionsModal = ({ event, onClose }: NoteReactionsModalProps) 
         <ScrollArea className="h-[300px] w-full pr-4">
           <TabsContent value="likes" className="mt-4">
             {isLoading ? (
-              <div className="flex justify-center py-4">
-                <Loader2 className="h-6 w-6 animate-spin" />
+              <div className="space-y-2">
+                <LoadingUser />
+                <LoadingUser />
+                <LoadingUser />
               </div>
             ) : likes.length > 0 ? (
               <div className="space-y-2">
@@ -65,8 +77,10 @@ export const NoteReactionsModal = ({ event, onClose }: NoteReactionsModalProps) 
 
           <TabsContent value="zaps" className="mt-4">
             {isLoading ? (
-              <div className="flex justify-center py-4">
-                <Loader2 className="h-6 w-6 animate-spin" />
+              <div className="space-y-2">
+                <LoadingUser />
+                <LoadingUser />
+                <LoadingUser />
               </div>
             ) : zaps.length > 0 ? (
               <div className="space-y-2">
@@ -93,10 +107,12 @@ export const NoteReactionsModal = ({ event, onClose }: NoteReactionsModalProps) 
 };
 
 const ReactionUser = ({ event, type }: { event: NDKEvent; type: 'like' | 'repost' }) => {
-  const { profile } = useRealtimeProfile(event.pubkey);
+  const { profile, isLoading } = useRealtimeProfile(event.pubkey);
   const npub = useMemo(() => event.author?.npub || '', [event.author]);
   
   const icon = type === 'like' ? <Heart size={16} className="text-red-500" /> : <ThumbsUp size={16} />;
+
+  if (isLoading) return <LoadingUser />;
 
   return (
     <Link to={`/profile/${npub}`}>
@@ -118,11 +134,12 @@ const ReactionUser = ({ event, type }: { event: NDKEvent; type: 'like' | 'repost
 const ZapUser = ({ event }: { event: NDKEvent }) => {
   const invoice = zapInvoiceFromEvent(event);
   const pubkey = invoice?.zapper;
-  const { profile } = useRealtimeProfile(pubkey);
+  const { profile, isLoading } = useRealtimeProfile(pubkey);
   const npub = useMemo(() => pubkey ? new NDKUser({ pubkey }).npub : '', [pubkey]);
   const amount = (invoice?.amount || 0) / 1000;
 
   if (!pubkey) return null;
+  if (isLoading) return <LoadingUser />;
   
   return (
     <Link to={`/profile/${npub}`}>
