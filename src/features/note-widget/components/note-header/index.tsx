@@ -86,7 +86,7 @@ export const NoteHeader = ({
                   <NoteReactionsModal 
                     event={event} 
                     trigger={
-                      <div className="flex w-full cursor-default items-center px-2 py-1.5 text-sm outline-none">
+                      <div className="flex w-full cursor-pointer items-center px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground">
                         <Activity className="w-4 h-4 mr-2" />
                         Show reactions
                       </div>
