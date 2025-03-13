@@ -126,12 +126,12 @@ export const NoteReactionsModal = ({ event, onClose }: NoteReactionsModalProps) 
 };
 
 const ReactionUser = ({ event, type }: { event: NDKEvent; type: 'like' | 'repost' }) => {
-  const { profile, isLoading } = useRealtimeProfile(event.pubkey);
+  const { profile } = useRealtimeProfile(event.pubkey);
   const npub = useMemo(() => event.author?.npub || '', [event.author]);
   
   const icon = type === 'like' ? <Heart size={16} className="text-red-500" /> : <ThumbsUp size={16} />;
 
-  if (isLoading) return <LoadingUser />;
+  if (profile === undefined) return <LoadingUser />;
 
   return (
     <Link to={`/profile/${npub}`}>
@@ -153,12 +153,12 @@ const ReactionUser = ({ event, type }: { event: NDKEvent; type: 'like' | 'repost
 const ZapUser = ({ event }: { event: NDKEvent }) => {
   const invoice = zapInvoiceFromEvent(event);
   const pubkey = invoice?.zapper;
-  const { profile, isLoading } = useRealtimeProfile(pubkey);
+  const { profile } = useRealtimeProfile(pubkey);
   const npub = useMemo(() => pubkey ? new NDKUser({ pubkey }).npub : '', [pubkey]);
   const amount = (invoice?.amount || 0) / 1000;
 
   if (!pubkey) return null;
-  if (isLoading) return <LoadingUser />;
+  if (profile === undefined) return <LoadingUser />;
   
   return (
     <Link to={`/profile/${npub}`}>
