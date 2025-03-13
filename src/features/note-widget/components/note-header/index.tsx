@@ -1,7 +1,6 @@
 import { NDKEvent, NDKUser } from '@nostr-dev-kit/ndk';
 import { formatDistanceToNowStrict } from 'date-fns';
 import {
-  EllipsisIcon,
   FileJsonIcon,
   HeartIcon,
   LinkIcon,
@@ -11,6 +10,7 @@ import {
   Activity,
   MoreVertical,
 } from 'lucide-react';
+import { useState } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
 import { Button } from '@/shared/components/ui/button';
@@ -18,9 +18,9 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  // DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/shared/components/ui/dropdown-menu';
+import { Dialog } from '@/shared/components/ui/dialog';
 
 import { NoteParentPreview } from '../note-parent-preview';
 import { NoteReactionsModal } from '../note-reactions-modal';
@@ -35,6 +35,7 @@ export const NoteHeader = ({
   enableMenu?: boolean;
 }) => {
   const { copy, navigate, profile, nevent, ref } = useNoteHeader(event);
+  const [showReactionsModal, setShowReactionsModal] = useState(false);
 
   return (
     <>
@@ -82,16 +83,9 @@ export const NoteHeader = ({
                   Open
                 </DropdownMenuItem>
 
-                <DropdownMenuItem asChild>
-                  <NoteReactionsModal 
-                    event={event} 
-                    trigger={
-                      <div className="flex w-full cursor-pointer items-center px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground">
-                        <Activity className="w-4 h-4 mr-2" />
-                        Show reactions
-                      </div>
-                    } 
-                  />
+                <DropdownMenuItem onClick={() => setShowReactionsModal(true)}>
+                  <Activity className="w-4 h-4 mr-2" />
+                  Show reactions
                 </DropdownMenuItem>
 
                 <DropdownMenuItem onClick={() => {/* Handle repost */}}>
@@ -118,8 +112,6 @@ export const NoteHeader = ({
                   <FileJsonIcon className="w-4 h-4 mr-2" />
                   Copy raw data
                 </DropdownMenuItem>
-
-                {/* <DropdownMenuSeparator /> */}
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -129,6 +121,13 @@ export const NoteHeader = ({
       <div className="pt-2">
         <NoteParentPreview event={event} />
       </div>
+
+      <Dialog open={showReactionsModal} onOpenChange={setShowReactionsModal}>
+        <NoteReactionsModal 
+          event={event}
+          onClose={() => setShowReactionsModal(false)}
+        />
+      </Dialog>
     </>
   );
 };

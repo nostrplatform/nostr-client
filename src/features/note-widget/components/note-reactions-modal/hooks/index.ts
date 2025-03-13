@@ -15,12 +15,12 @@ export const useNoteReactions = (event: NDKEvent | undefined) => {
 
   // Filter valid likes (content === '+')
   const likes = useMemo(() => 
-    likesEvents?.filter(e => e.content === '+').sort((a, b) => (b.created_at || 0) - (a.created_at || 0))
+    [...(likesEvents || [])].filter(e => e.content === '+').sort((a, b) => (b.created_at || 0) - (a.created_at || 0))
   , [likesEvents]);
 
   // Sort zaps by amount
   const zaps = useMemo(() => 
-    zapsEvents?.sort((a, b) => (b.created_at || 0) - (a.created_at || 0))
+    [...(zapsEvents || [])].sort((a, b) => (b.created_at || 0) - (a.created_at || 0))
   , [zapsEvents]);
 
   // Subscribe to likes

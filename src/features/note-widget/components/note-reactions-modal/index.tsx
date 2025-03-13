@@ -2,7 +2,7 @@ import { NDKEvent, NDKUser, zapInvoiceFromEvent } from '@nostr-dev-kit/ndk';
 import { useRealtimeProfile } from 'nostr-hooks';
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, ZapIcon, ThumbsUp } from 'lucide-react';
+import { Heart, ZapIcon, ThumbsUp, Loader2 } from 'lucide-react';
 
 import {
   Dialog,
@@ -13,76 +13,82 @@ import {
 } from '@/shared/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { Avatar, AvatarImage, AvatarFallback } from '@/shared/components/ui/avatar';
+import { ScrollArea } from '@/shared/components/ui/scroll-area';
 
 import { useNoteReactions } from './hooks';
 
-export const NoteReactionsModal = ({
-  event,
-  children,
-  trigger
-}: {
+interface NoteReactionsModalProps {
   event: NDKEvent;
-  children?: React.ReactNode;
-  trigger?: React.ReactNode;
-}) => {
+  onClose?: () => void;
+}
+
+export const NoteReactionsModal = ({ event, onClose }: NoteReactionsModalProps) => {
   const { likes, zaps, isLoading } = useNoteReactions(event);
-  
-  const hasReactions = (likes && likes.length > 0) || (zaps && zaps.length > 0);
-  
-  // Only show loading state when there's a trigger
-  if (isLoading && trigger) {
-    return trigger;
-  }
-  
-  // If no reactions and no explicit children to show, just render the trigger
-  if (!hasReactions && !children && trigger) {
-    return trigger;
-  }
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        {trigger || children}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Reactions</DialogTitle>
-        </DialogHeader>
-        
-        <Tabs defaultValue="likes">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="likes" className="flex items-center gap-1">
-              <Heart size={16} />
-              <span>Likes ({likes?.length || 0})</span>
-            </TabsTrigger>
-            <TabsTrigger value="zaps" className="flex items-center gap-1">
-              <ZapIcon size={16} />
-              <span>Zaps ({zaps?.length || 0})</span>
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="likes" className="max-h-96 overflow-y-auto">
-            {likes && likes.length > 0 ? (
-              likes.map((reaction) => (
-                <ReactionUser key={reaction.id} event={reaction} type="like" />
-              ))
+    <DialogContent className="sm:max-w-[425px]">
+      <DialogHeader>
+        <DialogTitle>Reactions</DialogTitle>
+      </DialogHeader>
+      
+      <Tabs defaultValue="likes" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="likes">
+            Likes ({likes.length})
+          </TabsTrigger>
+          <TabsTrigger value="zaps">
+            Zaps ({zaps.length})
+          </TabsTrigger>
+          <TabsTrigger value="reposts">
+            Reposts (0)
+          </TabsTrigger>
+        </TabsList>
+
+        <ScrollArea className="h-[300px] w-full pr-4">
+          <TabsContent value="likes" className="mt-4">
+            {isLoading ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : likes.length > 0 ? (
+              <div className="space-y-2">
+                {likes.map((like) => (
+                  <ReactionUser key={like.id} event={like} type="like" />
+                ))}
+              </div>
             ) : (
-              <div className="p-4 text-center text-muted-foreground">No likes yet</div>
+              <div className="text-center py-4 text-muted-foreground">
+                No likes yet
+              </div>
             )}
           </TabsContent>
-          
-          <TabsContent value="zaps" className="max-h-96 overflow-y-auto">
-            {zaps && zaps.length > 0 ? (
-              zaps.map((zap) => (
-                <ZapUser key={zap.id} event={zap} />
-              ))
+
+          <TabsContent value="zaps" className="mt-4">
+            {isLoading ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : zaps.length > 0 ? (
+              <div className="space-y-2">
+                {zaps.map((zap) => (
+                  <ZapUser key={zap.id} event={zap} />
+                ))}
+              </div>
             ) : (
-              <div className="p-4 text-center text-muted-foreground">No zaps yet</div>
+              <div className="text-center py-4 text-muted-foreground">
+                No zaps yet
+              </div>
             )}
           </TabsContent>
-        </Tabs>
-      </DialogContent>
-    </Dialog>
+
+          <TabsContent value="reposts" className="mt-4">
+            <div className="text-center py-4 text-muted-foreground">
+              No reposts yet
+            </div>
+          </TabsContent>
+        </ScrollArea>
+      </Tabs>
+    </DialogContent>
   );
 };
 
