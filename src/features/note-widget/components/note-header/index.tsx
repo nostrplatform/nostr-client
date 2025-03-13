@@ -8,6 +8,8 @@ import {
   SquareArrowOutUpRight,
   TagIcon,
   TextIcon,
+  Activity,
+  MoreVertical,
 } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
@@ -21,10 +23,17 @@ import {
 } from '@/shared/components/ui/dropdown-menu';
 
 import { NoteParentPreview } from '../note-parent-preview';
+import { NoteReactionsModal } from '../note-reactions-modal';
 
 import { useNoteHeader } from './hooks';
 
-export const NoteHeader = ({ event }: { event: NDKEvent }) => {
+export const NoteHeader = ({
+  event,
+  enableMenu = true,
+}: {
+  event: NDKEvent;
+  enableMenu?: boolean;
+}) => {
   const { copy, navigate, profile, nevent, ref } = useNoteHeader(event);
 
   return (
@@ -59,51 +68,61 @@ export const NoteHeader = ({ event }: { event: NDKEvent }) => {
             {formatDistanceToNowStrict((event.created_at || 0) * 1000)}
           </p>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="link" size="icon" className="opacity-40 hover:opacity-100">
-                <EllipsisIcon size={18} />
-              </Button>
-            </DropdownMenuTrigger>
+          {enableMenu && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="link" size="icon" className="opacity-40 hover:opacity-100">
+                  <MoreVertical size={18} />
+                </Button>
+              </DropdownMenuTrigger>
 
-            <DropdownMenuContent align="end" sideOffset={8}>
-              <DropdownMenuItem onClick={() => navigate(`/note/${nevent}`)}>
-                <SquareArrowOutUpRight className="w-4 h-4 mr-2" />
-                Open
-              </DropdownMenuItem>
+              <DropdownMenuContent align="end" sideOffset={8}>
+                <DropdownMenuItem onClick={() => navigate(`/note/${nevent}`)}>
+                  <SquareArrowOutUpRight className="w-4 h-4 mr-2" />
+                  Open
+                </DropdownMenuItem>
 
-              <DropdownMenuItem
-                onClick={() => {
-                  // TODO
-                }}
-              >
-                <HeartIcon className="w-4 h-4 mr-2" />
-                Reactions
-              </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <NoteReactionsModal 
+                    event={event} 
+                    trigger={
+                      <div className="flex w-full cursor-default items-center px-2 py-1.5 text-sm outline-none">
+                        <Activity className="w-4 h-4 mr-2" />
+                        Show reactions
+                      </div>
+                    } 
+                  />
+                </DropdownMenuItem>
 
-              <DropdownMenuItem onClick={() => copy(`${window.location.origin}/note/${nevent}`)}>
-                <LinkIcon className="w-4 h-4 mr-2" />
-                Copy note link
-              </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => {/* Handle repost */}}>
+                  <HeartIcon className="w-4 h-4 mr-2" />
+                  Repost
+                </DropdownMenuItem>
 
-              <DropdownMenuItem onClick={() => copy(event.content)}>
-                <TextIcon className="w-4 h-4 mr-2" />
-                Copy note text
-              </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => copy(`${window.location.origin}/note/${nevent}`)}>
+                  <LinkIcon className="w-4 h-4 mr-2" />
+                  Copy note link
+                </DropdownMenuItem>
 
-              <DropdownMenuItem onClick={() => copy(nevent)}>
-                <TagIcon className="w-4 h-4 mr-2" />
-                Copy note ID
-              </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => copy(event.content)}>
+                  <TextIcon className="w-4 h-4 mr-2" />
+                  Copy note text
+                </DropdownMenuItem>
 
-              <DropdownMenuItem onClick={() => copy(JSON.stringify(event.rawEvent()))}>
-                <FileJsonIcon className="w-4 h-4 mr-2" />
-                Copy raw data
-              </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => copy(nevent)}>
+                  <TagIcon className="w-4 h-4 mr-2" />
+                  Copy note ID
+                </DropdownMenuItem>
 
-              {/* <DropdownMenuSeparator /> */}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <DropdownMenuItem onClick={() => copy(JSON.stringify(event.rawEvent()))}>
+                  <FileJsonIcon className="w-4 h-4 mr-2" />
+                  Copy raw data
+                </DropdownMenuItem>
+
+                {/* <DropdownMenuSeparator /> */}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
 

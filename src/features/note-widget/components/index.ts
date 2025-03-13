@@ -7,3 +7,4 @@ export * from './note-like-btn';
 export * from './note-parent-preview';
 export * from './note-repost-btn';
 export * from './note-zap-btn';
+export * from './note-reactions-modal';

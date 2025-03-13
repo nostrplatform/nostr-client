@@ -10,10 +10,11 @@ export const NoteLikeBtn = ({ event, inView }: { event: NDKEvent; inView: boolea
   const { count, isLikedByMe, like } = useNoteLikeBtn(inView ? event : undefined);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  const handleLike = () => {
+  const handleLike = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setIsAnimating(true);
     like();
-    setTimeout(() => setIsAnimating(false), 300); // Reset animation after it completes
+    setTimeout(() => setIsAnimating(false), 300);
   };
 
   return (
@@ -25,7 +26,6 @@ export const NoteLikeBtn = ({ event, inView }: { event: NDKEvent; inView: boolea
       <div className={isAnimating ? 'animate-heartBeat' : ''}>
         {isLikedByMe ? <Heart size={18} fill="currentColor" /> : <HeartIcon size={18} />}
       </div>
-
       <span className="ml-1 text-xs">{count < 1000 ? count : '1K+'}</span>
     </Button>
   );
