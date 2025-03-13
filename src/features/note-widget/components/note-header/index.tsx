@@ -71,10 +71,10 @@ export const NoteHeader = ({
 
           {enableMenu && (
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="link" size="icon" className="opacity-40 hover:opacity-100">
+              <DropdownMenuTrigger>
+                <div className="opacity-40 hover:opacity-100 cursor-pointer p-2">
                   <MoreVertical size={18} />
-                </Button>
+                </div>
               </DropdownMenuTrigger>
 
               <DropdownMenuContent align="end" sideOffset={8}>
@@ -122,12 +122,14 @@ export const NoteHeader = ({
         <NoteParentPreview event={event} />
       </div>
 
-      <Dialog open={showReactionsModal} onOpenChange={setShowReactionsModal}>
-        <NoteReactionsModal 
-          event={event}
-          onClose={() => setShowReactionsModal(false)}
-        />
-      </Dialog>
+      {showReactionsModal && (
+        <Dialog modal={true} open={true} onOpenChange={setShowReactionsModal}>
+          <NoteReactionsModal 
+            event={event}
+            onClose={() => setShowReactionsModal(false)}
+          />
+        </Dialog>
+      )}
     </>
   );
 };

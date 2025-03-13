@@ -37,27 +37,26 @@ export const NoteReactionsModal = ({ event, onClose }: NoteReactionsModalProps) 
 
   return (
     <DialogContent className="w-[90vw] max-w-[600px]">
-      <DialogHeader>
+      <DialogHeader className="relative">
         <DialogTitle>Reactions</DialogTitle>
       </DialogHeader>
       
       <Tabs defaultValue="likes" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="likes" className="px-2">
-            <span className="truncate text-sm">
-              Likes ({likes.length > 999 ? '999+' : likes.length})
-            </span>
-          </TabsTrigger>
-          <TabsTrigger value="zaps" className="px-2">
-            <span className="truncate text-sm">
-              Zaps ({zaps.length > 999 ? '999+' : zaps.length})
-            </span>
-          </TabsTrigger>
-          <TabsTrigger value="reposts" className="px-2">
-            <span className="truncate text-sm">
-              Reposts ({reposts.length > 999 ? '999+' : reposts.length})
-            </span>
-          </TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 gap-1">
+          {["likes", "zaps", "reposts"].map((tab) => (
+            <TabsTrigger 
+              key={tab} 
+              value={tab}
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              <div className="truncate text-sm px-2">
+                {tab.charAt(0).toUpperCase() + tab.slice(1)} (
+                {tab === "likes" ? likes.length :
+                 tab === "zaps" ? zaps.length :
+                 reposts.length})
+              </div>
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         <ScrollArea className="h-[400px] md:h-[500px] w-full pr-4">
