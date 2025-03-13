@@ -13,6 +13,14 @@ export const useNoteReactions = (event: NDKEvent | undefined) => {
   const { createSubscription: createZapsSubscription, events: zapsEvents, isLoading: isLoadingZaps } = 
     useSubscription(zapsSubId);
 
+  // For reposts
+  const repostsSubId = event ? `note-all-reposts-${event.id}` : undefined;
+  const { 
+    createSubscription: createRepostsSubscription, 
+    events: repostsEvents, 
+    isLoading: isLoadingReposts 
+  } = useSubscription(repostsSubId);
+
   // Filter valid likes (content === '+')
   const likes = useMemo(() => 
     [...(likesEvents || [])].filter(e => e.content === '+').sort((a, b) => (b.created_at || 0) - (a.created_at || 0))
@@ -22,6 +30,11 @@ export const useNoteReactions = (event: NDKEvent | undefined) => {
   const zaps = useMemo(() => 
     [...(zapsEvents || [])].sort((a, b) => (b.created_at || 0) - (a.created_at || 0))
   , [zapsEvents]);
+
+  // Filter and sort reposts
+  const reposts = useMemo(() => 
+    [...(repostsEvents || [])].sort((a, b) => (b.created_at || 0) - (a.created_at || 0))
+  , [repostsEvents]);
 
   // Subscribe to likes
   useEffect(() => {
@@ -43,9 +56,20 @@ export const useNoteReactions = (event: NDKEvent | undefined) => {
     });
   }, [event, createZapsSubscription]);
 
+  // Subscribe to reposts
+  useEffect(() => {
+    if (!event) return;
+    
+    createRepostsSubscription({
+      filters: [{ kinds: [NDKKind.Repost], '#e': [event.id], limit: 100 }],
+      opts: { groupableDelay: 500 },
+    });
+  }, [event, createRepostsSubscription]);
+
   return { 
     likes, 
-    zaps, 
-    isLoading: isLoadingLikes || isLoadingZaps 
+    zaps,
+    reposts, 
+    isLoading: isLoadingLikes || isLoadingZaps || isLoadingReposts 
   };
 };

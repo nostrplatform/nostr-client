@@ -33,28 +33,34 @@ const LoadingUser = () => (
 );
 
 export const NoteReactionsModal = ({ event, onClose }: NoteReactionsModalProps) => {
-  const { likes, zaps, isLoading } = useNoteReactions(event);
+  const { likes, zaps, reposts, isLoading } = useNoteReactions(event);
 
   return (
-    <DialogContent className="sm:max-w-[425px]">
+    <DialogContent className="w-[90vw] max-w-[600px]">
       <DialogHeader>
         <DialogTitle>Reactions</DialogTitle>
       </DialogHeader>
       
       <Tabs defaultValue="likes" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="likes">
-            Likes ({likes.length})
+          <TabsTrigger value="likes" className="px-2">
+            <span className="truncate text-sm">
+              Likes ({likes.length > 999 ? '999+' : likes.length})
+            </span>
           </TabsTrigger>
-          <TabsTrigger value="zaps">
-            Zaps ({zaps.length})
+          <TabsTrigger value="zaps" className="px-2">
+            <span className="truncate text-sm">
+              Zaps ({zaps.length > 999 ? '999+' : zaps.length})
+            </span>
           </TabsTrigger>
-          <TabsTrigger value="reposts">
-            Reposts (0)
+          <TabsTrigger value="reposts" className="px-2">
+            <span className="truncate text-sm">
+              Reposts ({reposts.length > 999 ? '999+' : reposts.length})
+            </span>
           </TabsTrigger>
         </TabsList>
 
-        <ScrollArea className="h-[300px] w-full pr-4">
+        <ScrollArea className="h-[400px] md:h-[500px] w-full pr-4">
           <TabsContent value="likes" className="mt-4">
             {isLoading ? (
               <div className="space-y-2">
@@ -96,9 +102,23 @@ export const NoteReactionsModal = ({ event, onClose }: NoteReactionsModalProps) 
           </TabsContent>
 
           <TabsContent value="reposts" className="mt-4">
-            <div className="text-center py-4 text-muted-foreground">
-              No reposts yet
-            </div>
+            {isLoading ? (
+              <div className="space-y-2">
+                <LoadingUser />
+                <LoadingUser />
+                <LoadingUser />
+              </div>
+            ) : reposts.length > 0 ? (
+              <div className="space-y-2">
+                {reposts.map((repost) => (
+                  <ReactionUser key={repost.id} event={repost} type="repost" />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-muted-foreground">
+                No reposts yet
+              </div>
+            )}
           </TabsContent>
         </ScrollArea>
       </Tabs>
