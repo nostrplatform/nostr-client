@@ -22,12 +22,11 @@ import { Button } from '@/shared/components/ui/button';
 export const ActiveUserWidget = () => {
   const { activeUser } = useActiveUser();
   const { profile } = useRealtimeProfile(activeUser?.pubkey);
-   const { setTheme, theme } = useTheme();
+  const { setTheme, theme } = useTheme();
   const navigate = useNavigate();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const { logout, loginData } = useLogin();
-
 
   const downloadCredentials = useCallback(
     async ({ npub, nsec }: { npub: string; nsec: string }) => {
@@ -117,16 +116,14 @@ export const ActiveUserWidget = () => {
     [],
   );
 
-
-
   if (!activeUser) {
     return null;
   }
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger ref={triggerRef}>
-        <button className="flex items-center gap-2 cursor-pointer bg-secondary rounded-full xl:pl-1 xl:pr-2 xl:py-1">
+      <DropdownMenuTrigger asChild>
+        <div className="flex items-center gap-2 cursor-pointer bg-secondary rounded-full xl:pl-1 xl:pr-2 xl:py-1">
           <Avatar>
             <AvatarImage src={profile?.image} alt={profile?.name} className="object-cover" />
             <AvatarFallback className="bg-background/50" />
@@ -138,7 +135,7 @@ export const ActiveUserWidget = () => {
               {profile?.nip05?.toString() || ellipsis(activeUser.npub, 10)}
             </div>
           </div>
-        </button>
+        </div>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" sideOffset={8} style={{ width: triggerRef.current?.offsetWidth }}>
@@ -156,45 +153,36 @@ export const ActiveUserWidget = () => {
         <DropdownMenuSeparator />
 
         <DropdownMenuItem
-            onClick={() =>
-              downloadCredentials({ npub: activeUser.npub, nsec: loginData.privateKey || '' })
-            }
-          >
-            <KeySquareIcon className="w-4 h-4 mr-2" />
-            Credentials (PDF)
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
+          onClick={() =>
+            downloadCredentials({ npub: activeUser.npub, nsec: loginData.privateKey || '' })
+          }
+        >
+          <KeySquareIcon className="w-4 h-4 mr-2" />
+          Credentials (PDF)
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
 
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
           {theme === 'dark' ? (
-            <Button
-              variant="ghost"
-              className="flex w-full gap-2 justify-start p-0"
-              onClick={() => setTheme('light')}
-            >
-              <SunIcon size={18} />
+            <div className="flex w-full gap-2 items-center">
+              <SunIcon size={18} className="w-4 h-4 mr-2" />
               <span>Light mode</span>
-            </Button>
+            </div>
           ) : (
-            <Button
-              variant="ghost"
-              className="flex w-full gap-2 justify-start p-0"
-              onClick={() => setTheme('dark')}
-            >
-              <MoonIcon size={18} />
+            <div className="flex w-full gap-2 items-center">
+              <MoonIcon size={18} className="w-4 h-4 mr-2" />
               <span>Dark mode</span>
-            </Button>
+            </div>
           )}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem 
-            onClick={() =>
-              downloadCredentials({
-                npub: activeUser.npub,
-                nsec: loginData.privateKey || '',
-              }).then(() => logout())
-            }
-
+          onClick={() =>
+            downloadCredentials({
+              npub: activeUser.npub,
+              nsec: loginData.privateKey || '',
+            }).then(() => logout())
+          }
         >
           <PowerIcon className="w-4 h-4 mr-2" />
           <span>Logout</span>
