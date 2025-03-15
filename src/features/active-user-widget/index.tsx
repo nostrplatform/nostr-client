@@ -17,7 +17,6 @@ import {
 
 import { ellipsis } from '@/shared/utils';
 import { useTheme } from '@/shared/components/theme-provider';
-import { Button } from '@/shared/components/ui/button';
 
 export const ActiveUserWidget = () => {
   const { activeUser } = useActiveUser();

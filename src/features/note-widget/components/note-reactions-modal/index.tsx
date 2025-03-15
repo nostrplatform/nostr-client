@@ -2,7 +2,7 @@ import { NDKEvent, NDKUser, zapInvoiceFromEvent } from '@nostr-dev-kit/ndk';
 import { useRealtimeProfile } from 'nostr-hooks';
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, ZapIcon, ThumbsUp } from 'lucide-react';
+import { Heart, ZapIcon, ThumbsUp, Share } from 'lucide-react';
 
 import {
   DialogContent,
@@ -73,8 +73,9 @@ export const NoteReactionsModal = ({ event }: NoteReactionsModalProps) => {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-4 text-muted-foreground">
-                  No likes yet
+                <div className="text-center py-16 text-muted-foreground">
+                  <Heart size={40} className="mx-auto mb-4 text-muted-foreground/30" />
+                  <p>No likes yet</p>
                 </div>
               )}
             </ScrollArea>
@@ -95,8 +96,9 @@ export const NoteReactionsModal = ({ event }: NoteReactionsModalProps) => {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-4 text-muted-foreground">
-                  No zaps yet
+                <div className="text-center py-16 text-muted-foreground">
+                  <ZapIcon size={40} className="mx-auto mb-4 text-muted-foreground/30" />
+                  <p>No zaps yet</p>
                 </div>
               )}
             </ScrollArea>
@@ -117,8 +119,9 @@ export const NoteReactionsModal = ({ event }: NoteReactionsModalProps) => {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-4 text-muted-foreground">
-                  No reposts yet
+                <div className="text-center py-16 text-muted-foreground">
+                  <Share size={40} className="mx-auto mb-4 text-muted-foreground/30" />
+                  <p>No reposts yet</p>
                 </div>
               )}
             </ScrollArea>
