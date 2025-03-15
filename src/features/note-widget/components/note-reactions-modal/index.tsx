@@ -2,14 +2,12 @@ import { NDKEvent, NDKUser, zapInvoiceFromEvent } from '@nostr-dev-kit/ndk';
 import { useRealtimeProfile } from 'nostr-hooks';
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, ZapIcon, ThumbsUp, Loader2 } from 'lucide-react';
+import { Heart, ZapIcon, ThumbsUp } from 'lucide-react';
 
 import {
-  Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/shared/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { Avatar, AvatarImage, AvatarFallback } from '@/shared/components/ui/avatar';
