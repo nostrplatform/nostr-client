@@ -19,53 +19,107 @@ import { NoteByNoteId } from '@/features/note-widget';
 import { useNoteContent } from './hooks';
 import { MarkdownRenderers } from './renderers';
 
-interface NoteContentProps {
-  content?: string | null;
-  event?: NDKEvent;
-}
+export const NoteContent = memo(
+  ({ event }: { event: NDKEvent }) => {
+    const { chunks, inView, ref } = useNoteContent(event.content);
 
-export const NoteContent: React.FC<NoteContentProps> = ({ content }) => {
-  if (!content) return null;
+    return (
+      <div ref={ref} className="markdown-body bg-transparent">
+        {chunks.map((chunk, index) => {
+          switch (chunk.type) {
+            case 'text':
+            case 'naddr':
+              return (
+                <span key={index} className="whitespace-pre-wrap [overflow-wrap:anywhere]">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm, remarkBreaks]}
+                    rehypePlugins={[rehypeRaw, rehypeSanitize]}
+                    components={MarkdownRenderers}
+                  >
+                    {chunk.content}
+                  </ReactMarkdown>
+                </span>
+              );
+            case 'image':
+              return (
+                <img
+                  key={index}
+                  src={chunk.content}
+                  alt="Image"
+                  loading="lazy"
+                  className="w-full rounded-sm"
+                />
+              );
+            case 'video':
+              return <video key={index} src={chunk.content} controls className="w-full" />;
+            case 'youtube':
+              return (
+                <iframe
+                  key={index}
+                  src={`https://www.youtube.com/embed/${chunk.content}`}
+                  title="YouTube video player"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="w-full"
+                />
+              );
+            case 'url':
+              return (
+                <a
+                  key={index}
+                  href={chunk.content}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-blue-700 hover:underline [overflow-wrap:anywhere]"
+                >
+                  {chunk.content}
+                </a>
+              );
+            case 'nevent':
+              if (!inView) {
+                return null;
+              }
 
-  // Split the content by newlines and map to appropriate elements
-  const paragraphs = content.split('\n').filter(Boolean);
-
-  return (
-    <div className="whitespace-pre-wrap break-words">
-      {paragraphs.length > 0 ? (
-        paragraphs.map((paragraph, index) => (
-          <div key={`paragraph-${index}`} className="mb-2">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm, remarkBreaks]}
-              rehypePlugins={[rehypeRaw, rehypeSanitize]}
-              components={{
-                // Define custom components for markdown rendering if needed
-                a: ({ node, ...props }) => (
-                  <a 
-                    {...props} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="text-blue-500 hover:underline"
-                  />
-                ),
-                // Add more custom components as needed
-              }}
-            >
-              {paragraph}
-            </ReactMarkdown>
-          </div>
-        ))
-      ) : (
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm, remarkBreaks]}
-          rehypePlugins={[rehypeRaw, rehypeSanitize]}
-        >
-          {content}
-        </ReactMarkdown>
-      )}
-    </div>
-  );
-};
+              const parsedEvent = JSON.parse(chunk.content) as EventPointer;
+              if (parsedEvent.kind === 1) {
+                return (
+                  <div className="-mx-2 py-2">
+                    <NoteByNoteId key={index} noteId={parsedEvent.id} />
+                  </div>
+                );
+              } else {
+                return (
+                  <span key={index} className="[overflow-wrap:anywhere]">
+                    {`nostr:${neventEncode(parsedEvent)}`}
+                  </span>
+                );
+              }
+            case 'note':
+              if (inView) {
+                return (
+                  <div className="-mx-2 py-2">
+                    <NoteByNoteId key={index} noteId={chunk.content} />
+                  </div>
+                );
+              } else {
+                return null;
+              }
+            case 'nprofile':
+            case 'npub':
+              if (inView) {
+                return <ProfileMention key={index} pubkey={chunk.content} />;
+              } else {
+                return null;
+              }
+            default:
+              return null;
+          }
+        })}
+      </div>
+    );
+  },
+  (prev, next) => prev.event.id === next.event.id,
+);
 
 const ProfileMention = memo(
   ({ pubkey }: { pubkey: string }) => {
