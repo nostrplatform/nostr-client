@@ -48,7 +48,7 @@ const Layout = () => {
             </Link>
 
             <Link
-              to="/"
+              to="/explore"
               className="flex items-center gap-2 p-2 transition-colors duration-500 ease-out text-primary/60 hover:text-primary w-full rounded-lg hover:bg-secondary"
             >
               <div>
@@ -159,7 +159,7 @@ const Layout = () => {
               </Link>
 
               <Link
-                to="/"
+                to="/explore"
                 className="flex items-center gap-2 transition-colors duration-500 ease-out text-primary/60 hover:text-primary"
               >
                 <div>
@@ -245,7 +245,7 @@ const ProfilePage = () => import('./profile');
 const MessagesPage = () => import('./messages');
 const NotificationsPage = () => import('./notifications');
 const RelaysPage = () => import('./relays');
-
+const ExplorePage = () => import('./explore');
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -291,6 +291,12 @@ export const router = createBrowserRouter([
         path: '/relays',
         async lazy() {
           return { Component: (await RelaysPage()).RelaysPage };
+        },
+      },
+      {
+        path: '/explore',
+        async lazy() {
+          return { Component: (await ExplorePage()).ExplorePage };
         },
       },
     ],
