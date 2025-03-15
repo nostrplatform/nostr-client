@@ -1,6 +1,6 @@
 import { NDKEvent } from '@nostr-dev-kit/ndk';
-import { CornerDownRightIcon, ImageIcon, HashIcon } from 'lucide-react';
-import { useState } from 'react';
+import { CornerDownRightIcon, MicIcon, SmileIcon } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
 import { Button } from '@/shared/components/ui/button';
@@ -16,6 +16,8 @@ export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent 
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [wasPosted, setWasPosted] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [recognition, setRecognition] = useState<any>(null);
 
   const onEmojiClick = (emojiData: any) => {
     setContent((prev) => prev + emojiData.emoji);
@@ -36,6 +38,54 @@ export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent 
     setContent('');
     setIsFocused(false);
   };
+
+  const handleSpeechToText = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert("Speech recognition is not supported in your browser");
+      return;
+    }
+
+    if (isListening && recognition) {
+      recognition.stop();
+      setIsListening(false);
+      return;
+    }
+    
+    // @ts-ignore - TypeScript doesn't know about SpeechRecognition API
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const newRecognition = new SpeechRecognition();
+    
+    newRecognition.lang = 'en-US';
+    newRecognition.interimResults = false;
+    newRecognition.continuous = false;
+    
+    newRecognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setContent((prev) => {
+        // Add a space before the transcript if prev doesn't end with a space
+        const separator = prev && !prev.endsWith(' ') ? ' ' : '';
+        return prev + separator + transcript;
+      });
+    };
+    
+    newRecognition.onend = () => {
+      setIsListening(false);
+      setRecognition(null);
+    };
+    
+    setRecognition(newRecognition);
+    setIsListening(true);
+    newRecognition.start();
+  };
+
+  // Clean up speech recognition when component unmounts
+  useEffect(() => {
+    return () => {
+      if (recognition) {
+        recognition.stop();
+      }
+    };
+  }, [recognition]);
 
   return (
     <div className="px-4 py-3">
@@ -105,26 +155,21 @@ export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent 
                       onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                       className="h-9 w-9 rounded-full hover:bg-muted"
                     >
-                      😊
+                      <SmileIcon size={18} />
                     </Button>
                   </FloatingEmojiPicker>
 
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-9 w-9 rounded-full hover:bg-muted"
-                    title="Attach image"
+                    className={cn(
+                      "h-9 w-9 rounded-full hover:bg-muted",
+                      isListening && "bg-red-100 text-red-500"
+                    )}
+                    title="Voice to text"
+                    onClick={handleSpeechToText}
                   >
-                    <ImageIcon size={18} />
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 rounded-full hover:bg-muted"
-                    title="Add hashtag"
-                  >
-                    <HashIcon size={18} />
+                    <MicIcon size={18} />
                   </Button>
                 </div>
 
