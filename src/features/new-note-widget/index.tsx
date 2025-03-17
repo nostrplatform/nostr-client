@@ -15,7 +15,6 @@ export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent 
   const { content, post, setContent, profile } = useNewNoteWidget({ replyingToEvent });
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const [wasPosted, setWasPosted] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [recognition, setRecognition] = useState<any>(null);
 
@@ -29,14 +28,13 @@ export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent 
 
   const handlePost = () => {
     post();
-    setWasPosted(true);
-    setIsFocused(false);
     setContent('');
+    // Don't change focus state after posting
   };
 
   const handleCancel = () => {
     setContent('');
-    setIsFocused(false);
+    setIsFocused(false); // Only collapse the form when cancel is clicked
   };
 
   const handleSpeechToText = () => {
@@ -129,7 +127,6 @@ export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent 
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   onFocus={() => setIsFocused(true)}
-                  onBlur={() => wasPosted ? setIsFocused(false) : setIsFocused(true)}
                   placeholder="What's on your mind?"
                   maxLength={maxCharacters}
                 />

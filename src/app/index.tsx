@@ -15,7 +15,7 @@ export const App = () => {
 
   useEffect(() => {
     const storedRelays = localStorage.getItem('nostr-relays');
-    const relays = storedRelays ? JSON.parse(storedRelays) : ['wss://nos.lol', 'wss://relay.primal.net', 'wss://relay.nostr.band'];
+    const relays = storedRelays ? JSON.parse(storedRelays) : ['wss://nos.lol', 'wss://relay.primal.net', 'wss://relay.nostr.band', 'wss://relay.angor.io'];
     
     initNdk({
       explicitRelayUrls: relays,
@@ -32,7 +32,7 @@ export const App = () => {
 
   return (
     <>
-      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      <ThemeProvider defaultTheme="dark" storageKey="theme">
         <RouterProvider router={router} />
         <Toaster />
       </ThemeProvider>
