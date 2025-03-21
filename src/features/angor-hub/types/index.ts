@@ -13,6 +13,11 @@ export interface ProjectUpdate {
   projectSeeders: { threshold: number; secretHashes: string[] }[];
 }
 
+export interface ExternalIdentity {
+  platform: string;
+  username: string;
+}
+
 export interface IndexedProject {
   founderKey: string;
   nostrEventId: string;
@@ -40,6 +45,12 @@ export interface IndexedProject {
   stats?: ProjectStats;
   content?: string;
   content_created_at: number | undefined;
+  externalIdentities?: ExternalIdentity[];
+  externalIdentities_created_at?: number;
+  media?: string[];
+  media_created_at?: number;
+  members?: string[];
+  members_created_at?: number;
 }
 
 export interface ProjectStats {
@@ -50,11 +61,17 @@ export interface ProjectStats {
   countInPenalties: number;
 }
 
+export interface MediaItem {
+  url: string;
+  type: string; // typically 'image' or 'video'
+}
+
 export interface NostrProjectData {
   projectId: string;
   content?: string;
-  media?: string[];
+  media?: (string | MediaItem)[];
   members?: string[];
+  faq?: Array<{question: string; answer: string}>;
   metadata?: NDKUserProfile;
   details?: ProjectUpdate;
   profileEvent?: NDKEvent;

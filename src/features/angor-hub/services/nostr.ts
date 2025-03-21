@@ -1,5 +1,6 @@
 import NDK, { NDKEvent, NDKKind, NDKFilter, NDKUserProfile, NDKSubscription } from '@nostr-dev-kit/ndk';
 import { ProjectUpdate, NostrProjectData, ProjectStats } from '../types';
+import { nip19 } from 'nostr-tools';
 
 const INDEXER_URL = 'https://tbtc.indexer.angor.io/';
 
@@ -32,6 +33,7 @@ export class AngorNostrService {
     content?: string;
     media?: string[];
     members?: string[];
+    faq?: Array<{question: string; answer: string}>;
   }> = new Map();
 
   private constructor() {
@@ -149,6 +151,7 @@ export class AngorNostrService {
             projectData.content = contentData.content;
             projectData.media = contentData.media;
             projectData.members = contentData.members;
+            projectData.faq = contentData.faq;
           }
         } catch (error) {
           console.error('Error parsing project data:', error);
@@ -217,10 +220,11 @@ export class AngorNostrService {
   /**
    * Fetch project content data (description, media, team members)
    */
-  private async fetchProjectContent(pubkey: string): Promise<{
+  public async fetchProjectContent(pubkey: string): Promise<{
     content?: string;
     media?: string[];
     members?: string[];
+    faq?: Array<{question: string; answer: string}>;
   }> {
     const cached = this.contentCache.get(pubkey);
     if (cached) return cached;
@@ -229,6 +233,7 @@ export class AngorNostrService {
       content?: string;
       media?: string[];
       members?: string[];
+      faq?: Array<{question: string; answer: string}>;
     } = {};
     
     try {
@@ -241,14 +246,19 @@ export class AngorNostrService {
           '#d': ['angor:project'],
         },
         {
-          kinds: [NDKKind.AppSpecificData],
+          kinds: [NDKKind.AppSpecificData], 
           authors: [pubkey],
           '#d': ['angor:media'],
         },
         {
           kinds: [NDKKind.AppSpecificData],
-          authors: [pubkey],
+          authors: [pubkey], 
           '#d': ['angor:members'],
+        },
+        {
+          kinds: [NDKKind.AppSpecificData],
+          authors: [pubkey],
+          '#d': ['angor:faq'],
         }
       ];
       
@@ -267,20 +277,153 @@ export class AngorNostrService {
           try {
             const dTag = event.tags.find(t => t[0] === 'd')?.[1];
             
-            if (dTag === 'angor:project') {
-              result.content = event.content;
-            } else if (dTag === 'angor:media') {
-              try {
-                result.media = JSON.parse(event.content);
-              } catch (e) {
-                console.error('Failed to parse media content:', e);
-              }
-            } else if (dTag === 'angor:members') {
-              try {
-                result.members = JSON.parse(event.content);
-              } catch (e) {
-                console.error('Failed to parse members content:', e);
-              }
+            switch(dTag) {
+              case 'angor:project':
+                result.content = event.content;
+                break;
+                
+              case 'angor:media':
+                try {
+                  const mediaContent = event.content;
+                  console.log("Raw media content:", mediaContent);
+                  
+                  if (!mediaContent || mediaContent.trim() === '') {
+                    console.log("Empty media content");
+                    result.media = [];
+                  } else {
+                    try {
+                      // Try parsing as JSON
+                      const parsedMedia = JSON.parse(mediaContent);
+                      
+                      if (Array.isArray(parsedMedia)) {
+                        // Already an array of media items or URLs
+                        result.media = parsedMedia;
+                      } else if (typeof parsedMedia === 'object' && parsedMedia !== null) {
+                        // Single media item as object
+                        result.media = [parsedMedia];
+                      } else {
+                        // If not recognizable, try as string
+                        result.media = [parsedMedia.toString()];
+                      }
+                      
+                      console.log("Successfully parsed media:", result.media);
+                    } catch (parseError) {
+                      // If not valid JSON, try treating as URLs
+                      console.log("Failed to parse media JSON, trying alternative formats");
+                      
+                      if (mediaContent.includes(',')) {
+                        result.media = mediaContent.split(',').map(url => url.trim());
+                      } else {
+                        result.media = [mediaContent.trim()];
+                      }
+                    }
+                  }
+                } catch (e) {
+                  console.error('Failed to process media content:', e);
+                  result.media = [];
+                }
+                break;
+                
+              case 'angor:members':
+                try {
+                  console.log("Raw members content:", event.content);
+                  
+                  if (!event.content || event.content.trim() === '') {
+                    console.log("Empty members content");
+                    result.members = [];
+                  } else {
+                    try {
+                      // Try parsing as JSON
+                      const parsedMembers = JSON.parse(event.content);
+                      
+                      if (Array.isArray(parsedMembers)) {
+                        result.members = parsedMembers;
+                      } else if (typeof parsedMembers === 'object' && parsedMembers !== null) {
+                        // Handle the specific case with "pubkeys" array
+                        if ('pubkeys' in parsedMembers && Array.isArray(parsedMembers.pubkeys)) {
+                          console.log("Found pubkeys array:", parsedMembers.pubkeys);
+                          
+                          // Extract npub values from pubkeys array and convert any npub to hex if needed
+                          interface MembersObject {
+                            pubkeys: string[];
+                          }
+
+                          type PubkeyConverter = (key: string) => string | null;
+
+                          result.members = (parsedMembers as MembersObject).pubkeys.map<string | null>((key: string) => {
+                            // Check if it's already a hex key
+                            if (typeof key === 'string' && key.length === 64 && /^[0-9a-f]+$/i.test(key)) {
+                              return key;
+                            }
+                            
+                            // If it's an npub, try to convert it to hex
+                            if (typeof key === 'string' && key.startsWith('npub1')) {
+                              try {
+                                const { data } = nip19.decode(key);
+                                return data as string;
+                              } catch (e) {
+                                console.warn("Invalid npub format:", key);
+                                return null;
+                              }
+                            }
+                            
+                            return null;
+                          }).filter((key: string | null): key is string => Boolean(key)); // Type guard for non-null values
+                        } else if ('members' in parsedMembers && Array.isArray(parsedMembers.members)) {
+                          result.members = parsedMembers.members;
+                        } else {
+                          // Try to extract any pubkeys from the object
+                          const possibleMembers = Object.values(parsedMembers).filter(
+                            (val): val is string => typeof val === 'string' && 
+                            ((val.length === 64 && /^[0-9a-f]+$/i.test(val)) || 
+                             val.startsWith('npub1'))
+                          );
+                          
+                          result.members = possibleMembers.length > 0 ? possibleMembers.map(key => {
+                            if (typeof key === 'string' && key.startsWith('npub1')) {
+                              try {
+                                const { data } = nip19.decode(key);
+                                return data as string;
+                              } catch (e) {
+                                return null;
+                              }
+                            }
+                            return key;
+                          }).filter((key): key is string => key !== null) : [];
+                        }
+                      } else if (typeof parsedMembers === 'string') {
+                        // If it's a single string, it might be a comma-separated list
+                        if (parsedMembers.includes(',')) {
+                          result.members = parsedMembers.split(',').map(key => key.trim());
+                        } else {
+                          result.members = [parsedMembers];
+                        }
+                      }
+                    } catch (parseError) {
+                      // If it's not valid JSON, try treating it as a comma-separated list
+                      console.log("Failed to parse members JSON, trying alternative formats");
+                      
+                      if (event.content.includes(',')) {
+                        result.members = event.content.split(',').map(key => key.trim());
+                      } else {
+                        result.members = [event.content.trim()];
+                      }
+                    }
+                    console.log("Processed members:", result.members);
+                  }
+                } catch (e) {
+                  console.error('Failed to parse members content:', e);
+                  result.members = [];
+                }
+                break;
+                
+              case 'angor:faq':
+                try {
+                  result.faq = JSON.parse(event.content);
+                } catch (e) {
+                  console.error('Failed to parse FAQ content:', e);
+                }
+                break;
             }
           } catch (error) {
             console.error('Failed to process content event:', error);
@@ -289,7 +432,7 @@ export class AngorNostrService {
         
         sub.on('eose', () => {
           clearTimeout(timeout);
-          sub.stop(); // Using stop() instead of close()
+          sub.stop(); 
           this.activeSubscriptions.delete(sub);
           this.contentCache.set(pubkey, result);
           resolve(result);
@@ -555,7 +698,7 @@ export class AngorNostrService {
   /**
    * Clean up resources
    */
-  public cleanup() {
+  public cleanup(): void {
     // Stop all active subscriptions
     for (const sub of this.activeSubscriptions) {
       sub.stop(); // Using stop() instead of close()
@@ -570,5 +713,6 @@ export class AngorNostrService {
     
     // Disconnect from NDK
     this.isConnected = false;
+    this.ndk = null;
   }
 }

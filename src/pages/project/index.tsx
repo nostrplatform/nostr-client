@@ -7,7 +7,7 @@ import { Button } from '@/shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Spinner } from '@/shared/components/spinner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
- import { Badge } from '@/shared/components/ui/badge';
+import { Badge } from '@/shared/components/ui/badge';
 import { Progress } from '@/shared/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { Skeleton } from "@/shared/components/ui/skeleton";
@@ -18,6 +18,9 @@ import { useAngorProject } from '@/features/angor-hub/hooks';
 import { satoshiToBitcoin } from '@/shared/utils/bitcoin';
 import { useEffect, useState } from 'react';
 import { AngorNostrService } from '@/features/angor-hub/services/nostr';
+import { ProjectMediaGallery } from '@/features/angor-hub/components/project-media-gallery';
+import { ProjectFAQ } from '@/features/angor-hub/components/project-faq';
+import { ProjectMembers } from '@/features/angor-hub/components/project-members';
 
 // Add FAQ data
 const FAQ_DATA = [
@@ -92,26 +95,30 @@ export const ProjectPage = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const { project, stats, isLoading } = useAngorProject(projectId || '');
-  
+
   const [extraDetails, setExtraDetails] = useState<{
     content?: string;
     media?: string[];
     members?: string[];
+    faq?: Array<{ question: string; answer: string }>;
   }>({});
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const nostrService = AngorNostrService.getInstance();
-  
+
   useEffect(() => {
     const fetchExtraDetails = async () => {
-      if (!project || !project.nostrEventId) return;
-      
+      if (!project || !project.details?.nostrPubKey) return;
+
       try {
         setIsLoadingDetails(true);
-        const data = await nostrService.fetchProjectData(project.nostrEventId);
+        console.log("Fetching project content for:", project.details.nostrPubKey);
+        const data = await nostrService.fetchProjectContent(project.details.nostrPubKey);
+        console.log("Fetched project extra details:", data);
         setExtraDetails({
           content: data.content,
           media: data.media,
           members: data.members,
+          faq: data.faq
         });
       } catch (err) {
         console.error("Error fetching project details:", err);
@@ -121,8 +128,8 @@ export const ProjectPage = () => {
     };
 
     fetchExtraDetails();
-  }, [project, nostrService]);
-  
+  }, [project]);
+
   // Format dates
   const formatDate = (timestamp: number) => {
     return new Date(timestamp * 1000).toLocaleDateString('en-US', {
@@ -131,7 +138,7 @@ export const ProjectPage = () => {
       day: 'numeric',
     });
   };
-  
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center p-8 h-full">
@@ -140,7 +147,7 @@ export const ProjectPage = () => {
       </div>
     );
   }
-  
+
   if (!project) {
     return (
       <div className="flex flex-col items-center justify-center p-8">
@@ -152,7 +159,7 @@ export const ProjectPage = () => {
       </div>
     );
   }
-  
+
   // Extract project details
   const name = project.metadata?.name || project.profile?.name || 'Unnamed Project';
   const banner = project.metadata?.banner || project.profile?.banner;
@@ -161,40 +168,40 @@ export const ProjectPage = () => {
   const website = project.metadata?.website;
   const lud16 = project.metadata?.lud16;
   const nip05 = project.metadata?.nip05;
- 
-  
+
+
   // Create a npub if we have the Nostr pubkey
-  const npub = project.details?.nostrPubKey ? 
-    nip19.npubEncode(project.details.nostrPubKey) : 
+  const npub = project.details?.nostrPubKey ?
+    nip19.npubEncode(project.details.nostrPubKey) :
     undefined;
-    
+
   // Calculate funding progress
   const targetAmount = project.details?.targetAmount || 0;
   const currentAmount = stats ? stats.amountInvested : 0;
   const progressPercentage = targetAmount > 0 ? Math.min(Math.round((currentAmount / targetAmount) * 100), 100) : 0;
-  
+
   // Calculate time remaining
   const calculateTimeRemaining = () => {
     if (!project.details?.expiryDate) return 'N/A';
-    
+
     const now = Math.floor(Date.now() / 1000);
     const expiryTimestamp = project.details.expiryDate;
-    
+
     if (now >= expiryTimestamp) return 'Expired';
-    
+
     const secondsRemaining = expiryTimestamp - now;
     const daysRemaining = Math.floor(secondsRemaining / (60 * 60 * 24));
-    
+
     if (daysRemaining > 0) {
       return `${daysRemaining} days`;
     }
-    
+
     const hoursRemaining = Math.floor(secondsRemaining / (60 * 60));
     return `${hoursRemaining} hours`;
   };
-  
+
   const timeRemaining = calculateTimeRemaining();
-  
+
   return (
     <div className="flex flex-col space-y-6 p-4 pb-16">
       {/* Header with back button */}
@@ -204,7 +211,7 @@ export const ProjectPage = () => {
         </Button>
         <h2 className="text-xl font-bold">Project</h2>
       </div>
-      
+
       {/* Simplified Hero Section */}
       <Card className="border shadow-md overflow-hidden">
         <div className="relative">
@@ -251,10 +258,10 @@ export const ProjectPage = () => {
                     </h1>
                     <DescriptionText text={about} />
                   </div>
-                  
+
                   {/* Project Status Badge */}
                   <div className="flex items-center gap-2">
-                      {nip05 && (
+                    {nip05 && (
                       <Badge variant="outline" className="text-muted-foreground">
                         {nip05}
                       </Badge>
@@ -263,25 +270,38 @@ export const ProjectPage = () => {
                 </motion.div>
 
                 {/* Action Buttons */}
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.2 }}
                   className="flex flex-wrap items-center gap-3"
                 >
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="relative group hover:bg-muted/50"
-                    onClick={() => window.open(website?.startsWith('http') ? website : `https://${website}`, '_blank')}
-                  >
-                    <ExternalLink className="h-5 w-5 mr-2 transition-transform group-hover:scale-110" />
-                    <span>Visit Website</span>
-                  </Button>
                   
+                    <Button
+                      variant="ghost"
+                      size="lg"
+                      className="relative group hover:bg-muted/50"
+                      onClick={() => window.open(`https://test.angor.io/view/${projectId}`, '_blank')}
+                    >
+                      <ExternalLink className="h-5 w-5 mr-2 transition-transform group-hover:scale-110" />
+                      <span>Invest Now</span>
+                    </Button>
+                  
+                  {website && (
+                    <Button
+                      variant="ghost"
+                      size="lg"
+                      className="relative group hover:bg-muted/50"
+                      onClick={() => window.open(website?.startsWith('http') ? website : `https://${website}`, '_blank')}
+                    >
+                      <ExternalLink className="h-5 w-5 mr-2 transition-transform group-hover:scale-110" />
+                      <span>Visit Website</span>
+                    </Button>
+                  )}
+
                   {npub && (
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="lg"
                       className="relative group hover:bg-muted/50"
                       onClick={() => navigate(`/profile/${npub}`)}
@@ -290,7 +310,7 @@ export const ProjectPage = () => {
                       <span>View Profile</span>
                     </Button>
                   )}
-                  
+
                   {lud16 && (
                     <Button
                       variant="ghost"
@@ -325,9 +345,9 @@ export const ProjectPage = () => {
             </div>
           </div>
         )}
-        
+
       </Card>
-      
+
       {/* Content area */}
       <div className="grid grid-cols-1 gap-6">
         <Card>
@@ -339,7 +359,7 @@ export const ProjectPage = () => {
               <TabsTrigger value="team">Team</TabsTrigger>
               <TabsTrigger value="faq">FAQ</TabsTrigger>
             </TabsList>
-            
+
             {/* Description Tab */}
             <TabsContent value="description" className="mt-4 p-4">
               {isLoadingDetails ? (
@@ -356,7 +376,7 @@ export const ProjectPage = () => {
                         {(() => {
                           try {
                             const jsonContent = JSON.parse(extraDetails.content || '{}');
-                            
+
                             // Group data into categories for better organization
                             const groups = {
                               overview: ['nostrPubKey', 'projectIdentifier', 'founderKey', 'founderRecoveryKey'],
@@ -365,7 +385,7 @@ export const ProjectPage = () => {
                               stages: ['stages'],
                               seeding: ['projectSeeders']
                             };
-                            
+
                             return (
                               <div className="grid gap-6">
                                 {/* Overview Section */}
@@ -515,7 +535,7 @@ export const ProjectPage = () => {
             {/* Financial Tab */}
             <TabsContent value="financial" className="mt-4 p-4">
               {stats && (stats.amountSpentSoFarByFounder > 0 || stats.amountInPenalties > 0) ? (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="space-y-6"
@@ -549,7 +569,7 @@ export const ProjectPage = () => {
                         From {stats.investorCount} {stats.investorCount === 1 ? 'investor' : 'investors'}
                       </span>
                     </div>
-                    
+
                     <div className="bg-muted rounded-lg p-4 flex flex-col">
                       <span className="text-sm text-muted-foreground">Spent</span>
                       <span className="text-xl font-bold mt-1">
@@ -559,7 +579,7 @@ export const ProjectPage = () => {
                         Used by founder
                       </span>
                     </div>
-                    
+
                     <div className="bg-muted rounded-lg p-4 flex flex-col">
                       <span className="text-sm text-muted-foreground">Penalties</span>
                       <span className="text-xl font-bold mt-1">
@@ -580,126 +600,34 @@ export const ProjectPage = () => {
 
             {/* Media Tab */}
             <TabsContent value="media" className="mt-4 p-4">
-              {isLoadingDetails ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {[1,2,3,4,5,6].map(i => (
-                    <Skeleton key={i} className="aspect-video rounded-lg" />
-                  ))}
+              {/* Debug output */}
+              {/* {process.env.NODE_ENV !== 'production' && (
+                <div className="mb-4 p-2 bg-yellow-100/10 text-yellow-500 rounded text-xs">
+                  <p>Media debug info:</p>
+                  <pre className="overflow-auto">{JSON.stringify(extraDetails.media, null, 2)}</pre>
                 </div>
-              ) : extraDetails.media && extraDetails.media.length > 0 ? (
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="grid grid-cols-2 md:grid-cols-3 gap-4"
-                >
-                  {extraDetails.media.map((url, idx) => (
-                    <motion.div
-                      key={idx}
-                      initial={{ scale: 0.9, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ delay: idx * 0.1 }}
-                      className="group relative aspect-video overflow-hidden rounded-lg bg-muted"
-                    >
-                      <img 
-                        src={url}
-                        alt={`Project media ${idx + 1}`}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/placeholder-image.jpg';
-                        }}
-                      />
-                      <div 
-                        className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4"
-                        onClick={() => window.open(url, '_blank')}
-                      >
-                        <Button variant="secondary" size="sm" className="w-full">
-                          View Full Image
-                        </Button>
-                      </div>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                  <ImageIcon className="h-12 w-12 mb-4 opacity-20" />
-                  <p>No media content available</p>
-                </div>
-              )}
+              )} */}
+              <ProjectMediaGallery media={extraDetails.media} />
             </TabsContent>
 
             {/* Team Tab */}
             <TabsContent value="team" className="mt-4 p-4">
               {isLoadingDetails ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {[1,2,3].map(i => (
-                    <Skeleton key={i} className="h-24 rounded-lg" />
-                  ))}
+                <div className="space-y-4">
+                  <Skeleton className="h-8 w-36" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Skeleton className="h-32" />
+                    <Skeleton className="h-32" />
+                  </div>
                 </div>
-              ) : extraDetails.members && extraDetails.members.length > 0 ? (
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="grid grid-cols-2 md:grid-cols-3 gap-4"
-                >
-                  {extraDetails.members.map((member, idx) => (
-                    <motion.div
-                      key={idx}
-                      initial={{ scale: 0.9, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ delay: idx * 0.1 }}
-                      className="group relative overflow-hidden rounded-lg bg-muted p-4 hover:bg-muted/80 transition-colors cursor-pointer"
-                      onClick={() => {
-                        try {
-                          const npub = nip19.npubEncode(member);
-                          navigate(`/profile/${npub}`);
-                        } catch (e) {
-                          console.error("Invalid public key:", e);
-                        }
-                      }}
-                    >
-                      <div className="flex items-center gap-4">
-                        <Avatar className="h-12 w-12 border-2 border-background">
-                          <AvatarFallback>{idx + 1}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">Member {idx + 1}</p>
-                          <p className="text-sm text-muted-foreground font-mono">
-                            {member.substring(0, 8)}...
-                          </p>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </motion.div>
               ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                  <Users className="h-12 w-12 mb-4 opacity-20" />
-                  <p>No team members listed</p>
-                </div>
+                <ProjectMembers members={extraDetails.members} />
               )}
             </TabsContent>
 
             {/* FAQ Tab */}
             <TabsContent value="faq" className="mt-4 p-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Frequently Asked Questions</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Accordion type="single" collapsible className="w-full">
-                    {FAQ_DATA.map((item, idx) => (
-                      <AccordionItem key={idx} value={`item-${idx}`}>
-                        <AccordionTrigger className="text-left">
-                          {item.question}
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          {item.answer}
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
-                  </Accordion>
-                </CardContent>
-              </Card>
+              <ProjectFAQ faq={extraDetails.faq} />
             </TabsContent>
           </Tabs>
         </Card>
