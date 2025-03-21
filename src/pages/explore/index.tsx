@@ -5,7 +5,7 @@ import { AngorHub } from '@/features/angor-hub';
 import { Compass, TrendingUp, Rocket } from 'lucide-react';
 
 export const ExplorePage = () => {
-  const [currentTab, setCurrentTab] = useState<string>('trending');
+  const [currentTab, setCurrentTab] = useState<string>('angor');
   const [isLoading, setIsLoading] = useState(true);
 
   // Simulate loading state for better UX
@@ -13,7 +13,7 @@ export const ExplorePage = () => {
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 500);
-    
+
     return () => clearTimeout(timer);
   }, []);
 
@@ -30,15 +30,15 @@ export const ExplorePage = () => {
       </div>
 
       <div className="flex-1 overflow-hidden">
-        <Tabs 
-          defaultValue="angor" 
+        <Tabs
+          defaultValue="angor"
           className="w-full h-full flex flex-col"
           value={currentTab}
           onValueChange={setCurrentTab}
         >
           <div className="border-b bg-background/95 sticky z-10">
             <TabsList className="h-12 w-full rounded-none bg-transparent p-0">
-                          <TabsTrigger 
+              <TabsTrigger
                 value="angor"
                 className="flex-1 h-12 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none"
               >
@@ -47,7 +47,7 @@ export const ExplorePage = () => {
                   <span>Angor Projects</span>
                 </div>
               </TabsTrigger>
-                <TabsTrigger 
+              <TabsTrigger
                 value="trending"
                 className="flex-1 h-12 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none"
               >
@@ -59,18 +59,18 @@ export const ExplorePage = () => {
 
             </TabsList>
           </div>
-          
-          <TabsContent 
-            value="trending" 
+
+          <TabsContent
+            value="trending"
             className="flex-1 overflow-auto px-2 pt-4 data-[state=inactive]:hidden"
           >
             <div className={`transition-opacity duration-300 ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
               <TrendingNotesWidget />
             </div>
           </TabsContent>
-          
-          <TabsContent 
-            value="angor" 
+
+          <TabsContent
+            value="angor"
             className="flex-1 overflow-auto px-2 pt-4 data-[state=inactive]:hidden"
           >
             <div className={`transition-opacity duration-300 ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
