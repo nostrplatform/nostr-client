@@ -43,7 +43,7 @@ export const ProjectProfile = ({
         const data = await nostrService.fetchProjectData(project.nostrEventId);
         setExtraDetails({
           content: data.content,
-          media: data.media,
+          media: data.media?.map(item => typeof item === 'string' ? item : item.url),
           members: data.members,
         });
       } catch (err) {

@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import { ChevronLeft, ExternalLink, Calendar, User, Users, Clock, CircleDollarSign, Shield, Key, Timer, Image as ImageIcon } from 'lucide-react';
+import { ChevronLeft, ExternalLink, Calendar, User, Clock, CircleDollarSign, Shield, Key, Timer } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { nip19 } from 'nostr-tools';
 
@@ -11,7 +11,6 @@ import { Badge } from '@/shared/components/ui/badge';
 import { Progress } from '@/shared/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { Skeleton } from "@/shared/components/ui/skeleton";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/shared/components/ui/accordion";
 import { motion } from "framer-motion";
 
 import { useAngorProject } from '@/features/angor-hub/hooks';
@@ -22,25 +21,6 @@ import { ProjectMediaGallery } from '@/features/angor-hub/components/project-med
 import { ProjectFAQ } from '@/features/angor-hub/components/project-faq';
 import { ProjectMembers } from '@/features/angor-hub/components/project-members';
 
-// Add FAQ data
-const FAQ_DATA = [
-  {
-    question: "What is Angor Platform?",
-    answer: "Angor is a decentralized crowdfunding platform built on Bitcoin and Nostr that enables transparent and trustless project funding."
-  },
-  {
-    question: "How do project stages work?",
-    answer: "Projects are funded in stages. Each stage has a specific amount and release date. Funds are only released when milestones are met."
-  },
-  {
-    question: "What happens if a project fails?",
-    answer: "If a project fails to meet its milestones, investors can get their funds back through the penalty system."
-  },
-  {
-    question: "How are funds protected?",
-    answer: "Funds are secured through multi-signature wallets and time-locked contracts on the Bitcoin network."
-  }
-];
 
 // Add loading skeleton component
 const ProjectSkeleton = () => (

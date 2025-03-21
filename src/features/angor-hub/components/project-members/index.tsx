@@ -6,7 +6,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avat
 import { Card } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
 import { Skeleton } from '@/shared/components/ui/skeleton';
-import { Button } from '@/shared/components/ui/button';
 
 const MemberCard = ({ pubkey }: { pubkey: string }) => {
   // Convert npub to hex format if needed

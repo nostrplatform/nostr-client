@@ -1,6 +1,5 @@
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
-import { nip19 } from 'nostr-tools';
 import { Avatar, AvatarImage } from '@/shared/components/ui/avatar';
 import { ellipsis } from '@/shared/utils';
 import { satoshiToBitcoin } from '@/shared/utils/bitcoin';
@@ -18,10 +17,6 @@ export const ProjectItem = memo(
     const picture = project.metadata?.picture || project.profile?.picture;
     const about = project.metadata?.about || project.profile?.about || 'No description available';
     
-    // Convert hex pubkey to npub if available
-    const npub = project.details?.nostrPubKey ? 
-      nip19.npubEncode(project.details.nostrPubKey) : 
-      undefined;
 
     return (
       <Link 

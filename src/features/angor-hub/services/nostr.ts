@@ -348,8 +348,7 @@ export class AngorNostrService {
                             pubkeys: string[];
                           }
 
-                          type PubkeyConverter = (key: string) => string | null;
-
+ 
                           result.members = (parsedMembers as MembersObject).pubkeys.map<string | null>((key: string) => {
                             // Check if it's already a hex key
                             if (typeof key === 'string' && key.length === 64 && /^[0-9a-f]+$/i.test(key)) {
