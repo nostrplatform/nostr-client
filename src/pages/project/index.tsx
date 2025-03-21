@@ -260,107 +260,109 @@ export const ProjectPage = () => {
       <div className="grid grid-cols-1 gap-6">
         <Card>
           <Tabs defaultValue="description" className="w-full">
-            <TabsList className="w-full grid grid-cols-4 p-0">
+            <TabsList className="w-full grid grid-cols-4">
               <TabsTrigger value="description">Description</TabsTrigger>
               <TabsTrigger value="financial">Financial</TabsTrigger>
               <TabsTrigger value="media">Media</TabsTrigger>
               <TabsTrigger value="team">Team</TabsTrigger>
             </TabsList>
-
+            
             {/* Description Tab */}
             <TabsContent value="description" className="mt-4">
-              {isLoadingDetails ? (
-                <div className="flex justify-center py-8">
-                  <Spinner />
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="whitespace-pre-wrap">
-                    {extraDetails.content || about}
+              <div className="space-y-4">
+                {isLoadingDetails ? (
+                  <div className="flex justify-center py-8">
+                    <Spinner />
                   </div>
-                  
-                  {/* Project Information */}
-                  <Card className="mt-6">
-                    <CardHeader>
-                      <CardTitle>Project Information</CardTitle>
-                      <CardDescription>Details and timeline for the project</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div className="space-y-4">
-                          <div className="flex items-start gap-3">
-                            <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
-                            <div>
-                              <p className="font-medium">Timeline</p>
-                              <p className="text-sm text-muted-foreground">{startDate} - {expiryDate}</p>
+                ) : (
+                  <>
+                    <div className="whitespace-pre-wrap">
+                      {extraDetails.content || about}
+                    </div>
+                    
+                    {/* Project Information */}
+                    <Card className="mt-6">
+                      <CardHeader>
+                        <CardTitle>Project Information</CardTitle>
+                        <CardDescription>Details and timeline for the project</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                          <div className="space-y-4">
+                            <div className="flex items-start gap-3">
+                              <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
+                              <div>
+                                <p className="font-medium">Timeline</p>
+                                <p className="text-sm text-muted-foreground">{startDate} - {expiryDate}</p>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-start gap-3">
+                              <Target className="h-5 w-5 text-muted-foreground mt-0.5" />
+                              <div>
+                                <p className="font-medium">Target Amount</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {project.details?.targetAmount ? satoshiToBitcoin(project.details.targetAmount) : 'N/A'} BTC
+                                </p>
+                              </div>
                             </div>
                           </div>
                           
-                          <div className="flex items-start gap-3">
-                            <Target className="h-5 w-5 text-muted-foreground mt-0.5" />
-                            <div>
-                              <p className="font-medium">Target Amount</p>
-                              <p className="text-sm text-muted-foreground">
-                                {project.details?.targetAmount ? satoshiToBitcoin(project.details.targetAmount) : 'N/A'} BTC
-                              </p>
+                          <div className="space-y-4">
+                            <div className="flex items-start gap-3">
+                              <Users className="h-5 w-5 text-muted-foreground mt-0.5" />
+                              <div>
+                                <p className="font-medium">Investors</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {stats?.investorCount || 0} {stats && stats.investorCount === 1 ? 'investor has' : 'investors have'} contributed
+                                </p>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-start gap-3">
+                              <Shield className="h-5 w-5 text-muted-foreground mt-0.5" />
+                              <div>
+                                <p className="font-medium">Penalty Period</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {project.details?.penaltyDays || 'N/A'} days
+                                </p>
+                              </div>
                             </div>
                           </div>
                         </div>
                         
-                        <div className="space-y-4">
-                          <div className="flex items-start gap-3">
-                            <Users className="h-5 w-5 text-muted-foreground mt-0.5" />
+                        {/* Project stages */}
+                        {project.details?.stages && project.details.stages.length > 0 && (
+                          <>
+                            <Separator />
                             <div>
-                              <p className="font-medium">Investors</p>
-                              <p className="text-sm text-muted-foreground">
-                                {stats?.investorCount || 0} {stats && stats.investorCount === 1 ? 'investor has' : 'investors have'} contributed
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-start gap-3">
-                            <Shield className="h-5 w-5 text-muted-foreground mt-0.5" />
-                            <div>
-                              <p className="font-medium">Penalty Period</p>
-                              <p className="text-sm text-muted-foreground">
-                                {project.details?.penaltyDays || 'N/A'} days
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Project stages */}
-                      {project.details?.stages && project.details.stages.length > 0 && (
-                        <>
-                          <Separator />
-                          <div>
-                            <h3 className="text-lg font-medium mb-3">Project Stages</h3>
-                            <div className="space-y-3">
-                              {project.details.stages.map((stage, idx) => (
-                                <div key={idx} className="rounded-md bg-muted p-3">
-                                  <div className="flex justify-between items-center">
-                                    <div className="flex items-center gap-2">
-                                      <div className="h-6 w-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-medium">
-                                        {idx + 1}
+                              <h3 className="text-lg font-medium mb-3">Project Stages</h3>
+                              <div className="space-y-3">
+                                {project.details.stages.map((stage, idx) => (
+                                  <div key={idx} className="rounded-md bg-muted p-3">
+                                    <div className="flex justify-between items-center">
+                                      <div className="flex items-center gap-2">
+                                        <div className="h-6 w-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-medium">
+                                          {idx + 1}
+                                        </div>
+                                        <span className="font-medium">Stage {idx + 1}</span>
                                       </div>
-                                      <span className="font-medium">Stage {idx + 1}</span>
+                                      <span className="text-sm text-muted-foreground">{formatDate(stage.releaseDate)}</span>
                                     </div>
-                                    <span className="text-sm text-muted-foreground">{formatDate(stage.releaseDate)}</span>
+                                    <div className="mt-2 text-sm text-muted-foreground">
+                                      Release Amount: {satoshiToBitcoin(stage.amountToRelease)} BTC
+                                    </div>
                                   </div>
-                                  <div className="mt-2 text-sm text-muted-foreground">
-                                    Release Amount: {satoshiToBitcoin(stage.amountToRelease)} BTC
-                                  </div>
-                                </div>
-                              ))}
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        </>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
+                          </>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
+              </div>
             </TabsContent>
 
             {/* Financial Tab */}
@@ -470,8 +472,6 @@ export const ProjectPage = () => {
           </Tabs>
         </Card>
       </div>
-      
-      {/* Remove the right column layout */}
     </div>
   );
 };
