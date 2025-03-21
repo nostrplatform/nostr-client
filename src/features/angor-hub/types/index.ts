@@ -21,6 +21,7 @@ export interface IndexedProject {
   trxId: string;
   profile?: {
     name?: string;
+    banner?: string;
     picture?: string;
     about?: string;
   };
@@ -28,6 +29,7 @@ export interface IndexedProject {
   details_created_at: number | undefined;
   metadata?: {
     name?: string;
+    banner?: string;
     picture?: string;
     about?: string;
     nip05?: string;

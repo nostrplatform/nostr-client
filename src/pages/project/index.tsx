@@ -63,6 +63,31 @@ const AnimatedProgress = ({ value }: { value: number }) => (
   </div>
 );
 
+// Add this new component near the top of the file after imports
+const DescriptionText = ({ text }: { text: string }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const maxLength = 280; // Approximately 3 lines of text
+  const shouldShowButton = text.length > maxLength;
+
+  return (
+    <div className="space-y-2">
+      <p className={`text-base md:text-lg text-muted-foreground leading-relaxed ${!isExpanded && "line-clamp-3"}`}>
+        {text}
+      </p>
+      {shouldShowButton && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="text-primary hover:text-primary/80"
+        >
+          {isExpanded ? 'Show less' : 'Show more'}
+        </Button>
+      )}
+    </div>
+  );
+};
+
 export const ProjectPage = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
@@ -130,14 +155,13 @@ export const ProjectPage = () => {
   
   // Extract project details
   const name = project.metadata?.name || project.profile?.name || 'Unnamed Project';
+  const banner = project.metadata?.banner || project.profile?.banner;
   const picture = project.metadata?.picture || project.profile?.picture;
   const about = project.metadata?.about || project.profile?.about || 'No description available';
   const website = project.metadata?.website;
   const lud16 = project.metadata?.lud16;
   const nip05 = project.metadata?.nip05;
-  
-  const startDate = project.details?.startDate ? formatDate(project.details.startDate) : 'N/A';
-  const expiryDate = project.details?.expiryDate ? formatDate(project.details.expiryDate) : 'N/A';
+ 
   
   // Create a npub if we have the Nostr pubkey
   const npub = project.details?.nostrPubKey ? 
@@ -182,165 +206,126 @@ export const ProjectPage = () => {
       </div>
       
       {/* Simplified Hero Section */}
-      <Card className="border shadow-md">
-      <div className="relative min-h-[300px] md:min-h-[400px] overflow-hidden rounded-xl bg-card">
-        {/* Content Container */}
-        <div className="relative z-10 h-full container mx-auto px-4 py-8 md:py-12 flex flex-col justify-between">
-          {/* Header Content */}
-          <div className="space-y-6 max-w-4xl">
-            {/* Project Status Badge */}
-            <div className="inline-flex items-center gap-2 bg-muted px-3 py-1 rounded-full text-sm font-medium">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-              </span>
-              Active Project
-            </div>
-
-            {/* Title and Description */}
-            <div className="space-y-4">
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">
-                {name}
-              </h1>
-              <p className="text-lg md:text-xl text-muted-foreground max-w-3xl leading-relaxed">
-                {about}
-              </p>
-            </div>
-
-            {/* Project Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-8">
-             
-              {stats && (
-                <div className="bg-muted rounded-lg p-4">
-                  <div className="text-sm text-muted-foreground">Investors</div>
-                  <div className="font-medium mt-1">
-                    {stats.investorCount} {stats.investorCount === 1 ? 'Investor' : 'Investors'}
-                  </div>
-                </div>
-              )}
-
-              {project.details?.penaltyDays && (
-                <div className="bg-muted rounded-lg p-4">
-                  <div className="text-sm text-muted-foreground">Penalty Period</div>
-                  <div className="font-medium mt-1">{project.details.penaltyDays} days</div>
-                </div>
-              )}
-
-              <div className="bg-muted rounded-lg p-4">
-                <div className="text-sm text-muted-foreground">Time Remaining</div>
-                <div className="font-medium mt-1">{timeRemaining}</div>
-              </div>
-            </div>
+      <Card className="border shadow-md overflow-hidden">
+        <div className="relative">
+          {/* Banner Image */}
+          <div className="relative w-full h-[200px] md:h-[300px] overflow-hidden rounded-t-xl">
+            {picture ? (
+              <img
+                src={banner}
+                alt={`${name} banner`}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10" />
+            )}
+            {/* Overlay gradient */}
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
           </div>
 
-          {/* Action Buttons */}
-          <div className="mt-8 flex flex-col sm:flex-row items-start gap-4">
-            <Button 
-              variant="default" 
-              size="lg"
-              className="flex items-center gap-2"
-              onClick={() => window.open(`https://test.angor.io/view/${projectId}`, '_blank')}
-            >
-              <CircleDollarSign className="h-5 w-5" />
-              <span className="font-medium">Invest in Project</span>
-            </Button>
-            
-            {npub && (
-              <Button 
-                variant="outline" 
-                size="lg"
-                className="flex items-center gap-2"
-                onClick={() => navigate(`/profile/${npub}`)}
-              >
-                <User className="h-5 w-5" />
-                <span className="font-medium">View Nostr Profile</span>
-              </Button>
-            )}
+          {/* Profile Content */}
+          <div className="relative -mt-24 px-4 md:px-8 pb-8">
+            <div className="flex flex-col md:flex-row gap-6 items-start">
+              {/* Large Profile Avatar */}
+              <div className="relative">
+                <Avatar className="w-32 h-32 md:w-40 md:h-40 border-4 border-background rounded-full shadow-xl">
+                  <AvatarImage src={picture} alt={name} className="object-cover" />
+                  <AvatarFallback className="text-4xl font-bold">
+                    {name.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
 
-            {website && (
-              <Button
-                variant="ghost"
-                size="lg"
-                className="flex items-center gap-2"
-                onClick={() => window.open(website.startsWith('http') ? website : `https://${website}`, '_blank')}
-              >
-                <ExternalLink className="h-5 w-5" />
-                <span className="font-medium">Website</span>
-              </Button>
-            )}
+              {/* Project Info */}
+              <div className="flex-1 space-y-6 md:space-y-8">
+                {/* Project Title and Description */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="space-y-4"
+                >
+                  <div className="space-y-2">
+                    <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold tracking-tight">
+                      {name}
+                    </h1>
+                    <DescriptionText text={about} />
+                  </div>
+                  
+                  {/* Project Status Badge */}
+                  <div className="flex items-center gap-2">
+                      {nip05 && (
+                      <Badge variant="outline" className="text-muted-foreground">
+                        {nip05}
+                      </Badge>
+                    )}
+                  </div>
+                </motion.div>
+
+                {/* Action Buttons */}
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="flex flex-wrap items-center gap-3"
+                >
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="relative group hover:bg-muted/50"
+                    onClick={() => window.open(website?.startsWith('http') ? website : `https://${website}`, '_blank')}
+                  >
+                    <ExternalLink className="h-5 w-5 mr-2 transition-transform group-hover:scale-110" />
+                    <span>Visit Website</span>
+                  </Button>
+                  
+                  {npub && (
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="relative group hover:bg-muted/50"
+                      onClick={() => navigate(`/profile/${npub}`)}
+                    >
+                      <User className="h-5 w-5 mr-2 transition-transform group-hover:scale-110" />
+                      <span>View Profile</span>
+                    </Button>
+                  )}
+                  
+                  {lud16 && (
+                    <Button
+                      variant="ghost"
+                      size="lg"
+                      className="relative group hover:bg-muted/50"
+                    >
+                      <CircleDollarSign className="h-5 w-5 mr-2 transition-transform group-hover:scale-110" />
+                      <span>Lightning ⚡️</span>
+                    </Button>
+                  )}
+                </motion.div>
+
+
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      </Card>
-      {/* Project metadata card */}
-      <Card className="border shadow-md">
-        <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row gap-6">
-            <Avatar className="w-24 h-24 md:w-32 md:h-32 rounded-xl">
-              <AvatarImage src={picture} alt={name} className="object-cover" />
-              <AvatarFallback className="text-2xl font-bold">{name.substring(0, 2).toUpperCase()}</AvatarFallback>
-            </Avatar>
-            
-            <div className="flex-1 space-y-4">
-              <div className="space-y-1">
-                {website && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="font-medium text-muted-foreground">Website:</span>
-                    <a 
-                      href={website.startsWith('http') ? website : `https://${website}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-blue-500 hover:underline flex items-center gap-1"
-                    >
-                      {website} <ExternalLink className="h-3 w-3" />
-                    </a>
-                  </div>
-                )}
-                
-                {nip05 && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="font-medium text-muted-foreground">NIP-05:</span>
-                    <span>{nip05}</span>
-                  </div>
-                )}
-                
-                {lud16 && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="font-medium text-muted-foreground">Lightning:</span>
-                    <span>{lud16}</span>
-                  </div>
-                )}
-                
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="font-medium text-muted-foreground">Timeline:</span>
-                  <span>{startDate} - {expiryDate}</span>
-                </div>
-                
-                {project.founderKey && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="font-medium text-muted-foreground">Founder:</span>
-                    <span className="truncate max-w-xs">{project.founderKey.substring(0, 16)}...</span>
-                  </div>
-                )}
+
+        {/* Funding Progress Bar */}
+        {stats && targetAmount > 0 && (
+          <div className="px-4 md:px-8 pb-6">
+            <div className="bg-muted rounded-lg p-4">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="font-medium">{satoshiToBitcoin(currentAmount)} BTC raised</span>
+                <span className="text-muted-foreground">Target: {satoshiToBitcoin(targetAmount)} BTC</span>
               </div>
-              
-              {/* Funding progress */}
-              {stats && targetAmount > 0 && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>{satoshiToBitcoin(currentAmount)} BTC raised</span>
-                    <span>Target: {satoshiToBitcoin(targetAmount)} BTC</span>
-                  </div>
-                  <Progress value={progressPercentage} className="h-2" />
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{progressPercentage}% funded</span>
-                    <span className="text-muted-foreground">{timeRemaining} remaining</span>
-                  </div>
-                </div>
-              )}
+              <Progress value={progressPercentage} className="h-2" />
+              <div className="flex justify-between text-sm mt-2">
+                <span className="text-primary font-medium">{progressPercentage}% Complete</span>
+                <span className="text-muted-foreground">{timeRemaining} left</span>
+              </div>
             </div>
           </div>
-        </CardContent>
+        )}
+        
       </Card>
       
       {/* Content area */}
