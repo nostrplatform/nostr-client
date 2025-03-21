@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import { ChevronLeft, ExternalLink, Calendar, Target, User, Users, Clock, CircleDollarSign, Shield } from 'lucide-react';
+import { ChevronLeft, ExternalLink, Calendar, Target, User, Users, Clock, CircleDollarSign, Shield, Key, Timer } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { nip19 } from 'nostr-tools';
 
@@ -279,167 +279,157 @@ export const ProjectPage = () => {
                     <div className="prose dark:prose-invert max-w-none">
                       {(() => {
                         try {
-                          // Try to parse JSON
                           const jsonContent = JSON.parse(extraDetails.content || '{}');
-                          const formattedContent = Object.entries(jsonContent).map(([key, value]) => {
-                            if (key === 'stages') {
-                              return (
-                                <div key={key} className="mt-4">
-                                  <h4 className="text-lg font-medium">Project Stages</h4>
-                                  <div className="grid gap-3 mt-2">
-                                    {(value as any[]).map((stage, idx) => (
-                                      <div key={idx} className="bg-muted rounded-lg p-3">
-                                        <div className="flex justify-between items-center">
-                                          <div className="flex items-center gap-2">
-                                            <div className="h-6 w-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-medium">
-                                              {idx + 1}
-                                            </div>
-                                            <span className="font-medium">Amount: {satoshiToBitcoin(stage.amountToRelease)} BTC</span>
+                          
+                          // Group data into categories for better organization
+                          const groups = {
+                            overview: ['nostrPubKey', 'projectIdentifier', 'founderKey', 'founderRecoveryKey'],
+                            dates: ['startDate', 'expiryDate'],
+                            financial: ['targetAmount', 'penaltyDays'],
+                            stages: ['stages'],
+                            seeding: ['projectSeeders']
+                          };
+                          
+                          return (
+                            <div className="grid gap-6">
+                              {/* Overview Section */}
+                              <Card className="overflow-hidden">
+                                <CardHeader className="bg-muted/40">
+                                  <CardTitle className="text-lg">Project Overview</CardTitle>
+                                </CardHeader>
+                                <CardContent className="pt-6">
+                                  <div className="grid gap-4 md:grid-cols-2">
+                                    {groups.overview.map(key => (
+                                      jsonContent[key] && (
+                                        <div key={key} className="flex items-start gap-2 overflow-hidden">
+                                          <div className="rounded-md bg-primary/10 p-2">
+                                            <Key className="h-4 w-4 text-primary" />
                                           </div>
-                                          <span className="text-sm text-muted-foreground">
-                                            {formatDate(stage.releaseDate)}
-                                          </span>
+                                          <div className="min-w-0 flex-1">
+                                            <p className="font-medium capitalize">
+                                              {key.replace(/([A-Z])/g, ' $1').trim()}
+                                            </p>
+                                            <p className="text-sm text-muted-foreground truncate font-mono">
+                                              {String(jsonContent[key])}
+                                            </p>
+                                          </div>
                                         </div>
-                                      </div>
+                                      )
                                     ))}
                                   </div>
-                                </div>
-                              );
-                            }
-                            
-                            if (key === 'projectSeeders') {
-                              return (
-                                <div key={key} className="mt-4">
-                                  <h4 className="text-lg font-medium">Project Seeders</h4>
-                                  <p>Threshold: {(value as any).threshold}</p>
-                                  {(value as any).secretHashes?.length > 0 && (
-                                    <div className="mt-2">
-                                      <p className="font-medium">Secret Hashes:</p>
-                                      <ul className="list-disc pl-5 mt-1">
-                                        {(value as any).secretHashes.map((hash: string, idx: number) => (
-                                          <li key={idx} className="text-sm font-mono">{hash}</li>
-                                        ))}
-                                      </ul>
+                                </CardContent>
+                              </Card>
+
+                              {/* Timeline Section */}
+                              <Card>
+                                <CardHeader className="bg-muted/40">
+                                  <CardTitle className="text-lg">Project Timeline</CardTitle>
+                                </CardHeader>
+                                <CardContent className="pt-6">
+                                  <div className="flex justify-between items-center">
+                                    <div className="text-center flex-1">
+                                      <Calendar className="h-8 w-8 mx-auto text-primary/60" />
+                                      <p className="mt-2 font-medium">Start Date</p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {formatDate(jsonContent.startDate)}
+                                      </p>
                                     </div>
-                                  )}
-                                </div>
-                              );
-                            }
-                            
-                            if (typeof value === 'number' && key.toLowerCase().includes('date')) {
-                              return (
-                                <div key={key} className="flex items-center gap-2">
-                                  <span className="font-medium">{key}:</span>
-                                  <span>{formatDate(value)}</span>
-                                </div>
-                              );
-                            }
+                                    <div className="h-px w-full max-w-[100px] bg-border" />
+                                    <div className="text-center flex-1">
+                                      <Clock className="h-8 w-8 mx-auto text-primary/60" />
+                                      <p className="mt-2 font-medium">Penalty Period</p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {jsonContent.penaltyDays} Days
+                                      </p>
+                                    </div>
+                                    <div className="h-px w-full max-w-[100px] bg-border" />
+                                    <div className="text-center flex-1">
+                                      <Timer className="h-8 w-8 mx-auto text-primary/60" />
+                                      <p className="mt-2 font-medium">End Date</p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {formatDate(jsonContent.expiryDate)}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
 
-                            if (key === 'targetAmount') {
-                              return (
-                                <div key={key} className="flex items-center gap-2">
-                                  <span className="font-medium">{key}:</span>
-                                  <span>{satoshiToBitcoin(value as number)} BTC</span>
-                                </div>
-                              );
-                            }
+                              {/* Stages Section */}
+                              {jsonContent.stages && jsonContent.stages.length > 0 && (
+                                <Card>
+                                  <CardHeader className="bg-muted/40">
+                                    <CardTitle className="text-lg">Funding Stages</CardTitle>
+                                  </CardHeader>
+                                  <CardContent className="pt-6">
+                                    <div className="relative">
+                                      <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border" />
+                                      <div className="space-y-6">
+                                        {jsonContent.stages.map((stage: any, idx: number) => (
+                                          <div key={idx} className="relative pl-8">
+                                            <div className="absolute left-0 w-8 flex items-center justify-center">
+                                              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary border-4 border-background">
+                                                {idx + 1}
+                                              </div>
+                                            </div>
+                                            <div className="bg-muted rounded-lg p-4">
+                                              <div className="flex justify-between items-center mb-2">
+                                                <h4 className="font-medium">Stage {idx + 1}</h4>
+                                                <Badge variant="outline">
+                                                  {formatDate(stage.releaseDate)}
+                                                </Badge>
+                                              </div>
+                                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                <CircleDollarSign className="h-4 w-4" />
+                                                <span>Release Amount: {satoshiToBitcoin(stage.amountToRelease)} BTC</span>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              )}
 
-                            return (
-                              <div key={key} className="flex items-center gap-2">
-                                <span className="font-medium">{key}:</span>
-                                <span className="font-mono text-sm">{String(value)}</span>
-                              </div>
-                            );
-                          });
-
-                          return <div className="space-y-2">{formattedContent}</div>;
+                              {/* Project Seeders */}
+                              {jsonContent.projectSeeders && (
+                                <Card>
+                                  <CardHeader className="bg-muted/40">
+                                    <CardTitle className="text-lg">Project Seeders</CardTitle>
+                                  </CardHeader>
+                                  <CardContent className="pt-6">
+                                    <div className="space-y-4">
+                                      <div className="flex items-center gap-2">
+                                        <Shield className="h-5 w-5 text-primary/60" />
+                                        <span className="font-medium">Threshold:</span>
+                                        <span>{jsonContent.projectSeeders.threshold}</span>
+                                      </div>
+                                      {jsonContent.projectSeeders.secretHashes?.length > 0 && (
+                                        <div className="space-y-2">
+                                          <p className="font-medium flex items-center gap-2">
+                                            <Key className="h-4 w-4 text-primary/60" />
+                                            Secret Hashes
+                                          </p>
+                                          <div className="grid gap-2 md:grid-cols-2">
+                                            {jsonContent.projectSeeders.secretHashes.map((hash: string, idx: number) => (
+                                              <div key={idx} className="bg-muted p-2 rounded font-mono text-xs truncate">
+                                                {hash}
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              )}
+                            </div>
+                          );
                         } catch (e) {
-                          // If not JSON, display as regular text
                           return <p className="whitespace-pre-wrap">{extraDetails.content || about}</p>;
                         }
                       })()}
                     </div>
-                    
-                    {/* Project Information */}
-                    <Card className="mt-6">
-                      <CardHeader>
-                        <CardTitle>Project Information</CardTitle>
-                        <CardDescription>Details and timeline for the project</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                          <div className="space-y-4">
-                            <div className="flex items-start gap-3">
-                              <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
-                              <div>
-                                <p className="font-medium">Timeline</p>
-                                <p className="text-sm text-muted-foreground">{startDate} - {expiryDate}</p>
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-start gap-3">
-                              <Target className="h-5 w-5 text-muted-foreground mt-0.5" />
-                              <div>
-                                <p className="font-medium">Target Amount</p>
-                                <p className="text-sm text-muted-foreground">
-                                  {project.details?.targetAmount ? satoshiToBitcoin(project.details.targetAmount) : 'N/A'} BTC
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-4">
-                            <div className="flex items-start gap-3">
-                              <Users className="h-5 w-5 text-muted-foreground mt-0.5" />
-                              <div>
-                                <p className="font-medium">Investors</p>
-                                <p className="text-sm text-muted-foreground">
-                                  {stats?.investorCount || 0} {stats && stats.investorCount === 1 ? 'investor has' : 'investors have'} contributed
-                                </p>
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-start gap-3">
-                              <Shield className="h-5 w-5 text-muted-foreground mt-0.5" />
-                              <div>
-                                <p className="font-medium">Penalty Period</p>
-                                <p className="text-sm text-muted-foreground">
-                                  {project.details?.penaltyDays || 'N/A'} days
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Project stages */}
-                        {project.details?.stages && project.details.stages.length > 0 && (
-                          <>
-                            <Separator />
-                            <div>
-                              <h3 className="text-lg font-medium mb-3">Project Stages</h3>
-                              <div className="space-y-3">
-                                {project.details.stages.map((stage, idx) => (
-                                  <div key={idx} className="rounded-md bg-muted p-3">
-                                    <div className="flex justify-between items-center">
-                                      <div className="flex items-center gap-2">
-                                        <div className="h-6 w-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-medium">
-                                          {idx + 1}
-                                        </div>
-                                        <span className="font-medium">Stage {idx + 1}</span>
-                                      </div>
-                                      <span className="text-sm text-muted-foreground">{formatDate(stage.releaseDate)}</span>
-                                    </div>
-                                    <div className="mt-2 text-sm text-muted-foreground">
-                                      Release Amount: {satoshiToBitcoin(stage.amountToRelease)} BTC
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </>
-                        )}
-                      </CardContent>
-                    </Card>
                   </>
                 )}
               </div>
