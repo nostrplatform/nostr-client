@@ -4,7 +4,7 @@ import { AngorNostrService } from '../services/nostr';
 
 const INDEXER_URL = 'https://tbtc.indexer.angor.io/';
 const INITIAL_OFFSET = 0;
-const LIMIT = 20;
+const LIMIT = 10;
 
 export const useAngorHub = () => {
   const [projects, setProjects] = useState<IndexedProject[] | null | undefined>(undefined);
