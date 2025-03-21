@@ -276,8 +276,88 @@ export const ProjectPage = () => {
                   </div>
                 ) : (
                   <>
-                    <div className="whitespace-pre-wrap">
-                      {extraDetails.content || about}
+                    <div className="prose dark:prose-invert max-w-none">
+                      {(() => {
+                        try {
+                          // Try to parse JSON
+                          const jsonContent = JSON.parse(extraDetails.content || '{}');
+                          const formattedContent = Object.entries(jsonContent).map(([key, value]) => {
+                            if (key === 'stages') {
+                              return (
+                                <div key={key} className="mt-4">
+                                  <h4 className="text-lg font-medium">Project Stages</h4>
+                                  <div className="grid gap-3 mt-2">
+                                    {(value as any[]).map((stage, idx) => (
+                                      <div key={idx} className="bg-muted rounded-lg p-3">
+                                        <div className="flex justify-between items-center">
+                                          <div className="flex items-center gap-2">
+                                            <div className="h-6 w-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-medium">
+                                              {idx + 1}
+                                            </div>
+                                            <span className="font-medium">Amount: {satoshiToBitcoin(stage.amountToRelease)} BTC</span>
+                                          </div>
+                                          <span className="text-sm text-muted-foreground">
+                                            {formatDate(stage.releaseDate)}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            }
+                            
+                            if (key === 'projectSeeders') {
+                              return (
+                                <div key={key} className="mt-4">
+                                  <h4 className="text-lg font-medium">Project Seeders</h4>
+                                  <p>Threshold: {(value as any).threshold}</p>
+                                  {(value as any).secretHashes?.length > 0 && (
+                                    <div className="mt-2">
+                                      <p className="font-medium">Secret Hashes:</p>
+                                      <ul className="list-disc pl-5 mt-1">
+                                        {(value as any).secretHashes.map((hash: string, idx: number) => (
+                                          <li key={idx} className="text-sm font-mono">{hash}</li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            }
+                            
+                            if (typeof value === 'number' && key.toLowerCase().includes('date')) {
+                              return (
+                                <div key={key} className="flex items-center gap-2">
+                                  <span className="font-medium">{key}:</span>
+                                  <span>{formatDate(value)}</span>
+                                </div>
+                              );
+                            }
+
+                            if (key === 'targetAmount') {
+                              return (
+                                <div key={key} className="flex items-center gap-2">
+                                  <span className="font-medium">{key}:</span>
+                                  <span>{satoshiToBitcoin(value as number)} BTC</span>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <div key={key} className="flex items-center gap-2">
+                                <span className="font-medium">{key}:</span>
+                                <span className="font-mono text-sm">{String(value)}</span>
+                              </div>
+                            );
+                          });
+
+                          return <div className="space-y-2">{formattedContent}</div>;
+                        } catch (e) {
+                          // If not JSON, display as regular text
+                          return <p className="whitespace-pre-wrap">{extraDetails.content || about}</p>;
+                        }
+                      })()}
                     </div>
                     
                     {/* Project Information */}
