@@ -30,6 +30,9 @@ export interface IndexedProject {
     name?: string;
     picture?: string;
     about?: string;
+    nip05?: string;
+    website?: string;
+    lud16?: string;
   };
   metadata_created_at: number | undefined;
   stats?: ProjectStats;
@@ -53,6 +56,12 @@ export interface NostrProjectData {
   metadata?: NDKUserProfile;
   details?: ProjectUpdate;
   profileEvent?: NDKEvent;
+  // New fields for better profile support
+  name?: string;
+  picture?: string;
+  about?: string;
+  website?: string;
+  createdAt?: number;
 }
 
 export type AngorProjectsResponse = IndexedProject[];

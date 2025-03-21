@@ -5,7 +5,13 @@ import { ProjectItem } from './components';
 import { useAngorHub } from './hooks';
 
 export const AngorHub = () => {
-  const { projects, stats, loadMore, hasMore, isLoading } = useAngorHub();
+  const { 
+    projects, 
+    stats, 
+    loadMore, 
+    hasMore, 
+    isLoading
+  } = useAngorHub();
 
   return (
     <div className="flex flex-col gap-2 w-full h-full overflow-y-auto overflow-x-hidden">

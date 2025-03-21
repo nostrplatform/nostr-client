@@ -123,6 +123,61 @@ export const useAngorHub = () => {
     hasMore, 
     isLoading,
     reset,
-    total: totalProjects 
+    total: totalProjects
   };
+};
+
+// Add a new hook for loading a single project
+export const useAngorProject = (projectId: string) => {
+  const [project, setProject] = useState<IndexedProject | null | undefined>(undefined);
+  const [stats, setStats] = useState<ProjectStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const nostrService = AngorNostrService.getInstance();
+  
+  useEffect(() => {
+    const fetchProject = async () => {
+      if (!projectId) return;
+      
+      setIsLoading(true);
+      try {
+        // Fetch project from indexer
+        const res = await fetch(
+          `${INDEXER_URL}api/query/Angor/projects/${projectId}`
+        );
+        
+        if (!res.ok) {
+          throw new Error('Project not found');
+        }
+        
+        const indexedProject = await res.json() as IndexedProject;
+        
+        // Fetch Nostr data
+        if (indexedProject.nostrEventId) {
+          const nostrData = await nostrService.fetchProjectData(indexedProject.nostrEventId);
+          
+          // Merge data
+          indexedProject.details = nostrData.details;
+          indexedProject.content = nostrData.content;
+          indexedProject.metadata = nostrData.metadata;
+        }
+        
+        // Fetch stats
+        const projectStats = await nostrService.fetchProjectStats(projectId);
+        
+        setProject(indexedProject);
+        if (projectStats) {
+          setStats(projectStats);
+        }
+      } catch (error) {
+        console.error('Error fetching project:', error);
+        setProject(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchProject();
+  }, [projectId, nostrService]);
+  
+  return { project, stats, isLoading };
 };

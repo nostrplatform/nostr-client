@@ -31,23 +31,14 @@ export const ExplorePage = () => {
 
       <div className="flex-1 overflow-hidden">
         <Tabs 
-          defaultValue="trending" 
+          defaultValue="angor" 
           className="w-full h-full flex flex-col"
           value={currentTab}
           onValueChange={setCurrentTab}
         >
           <div className="border-b bg-background/95 sticky z-10">
             <TabsList className="h-12 w-full rounded-none bg-transparent p-0">
-              <TabsTrigger 
-                value="trending"
-                className="flex-1 h-12 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none"
-              >
-                <div className="flex items-center justify-center gap-2">
-                  <TrendingUp className="h-4 w-4" />
-                  <span>Trending Notes</span>
-                </div>
-              </TabsTrigger>
-              <TabsTrigger 
+                          <TabsTrigger 
                 value="angor"
                 className="flex-1 h-12 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none"
               >
@@ -56,6 +47,16 @@ export const ExplorePage = () => {
                   <span>Angor Projects</span>
                 </div>
               </TabsTrigger>
+                <TabsTrigger 
+                value="trending"
+                className="flex-1 h-12 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none"
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  <span>Trending Notes</span>
+                </div>
+              </TabsTrigger>
+
             </TabsList>
           </div>
           

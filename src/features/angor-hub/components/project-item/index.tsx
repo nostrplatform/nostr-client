@@ -7,7 +7,13 @@ import { satoshiToBitcoin } from '@/shared/utils/bitcoin';
 import { IndexedProject, ProjectStats } from '../../types';
 
 export const ProjectItem = memo(
-  ({ project, stats }: { project: IndexedProject; stats?: ProjectStats }) => {
+  ({ 
+    project, 
+    stats
+  }: { 
+    project: IndexedProject; 
+    stats?: ProjectStats;
+  }) => {
     const name = project.metadata?.name || project.profile?.name || 'Unnamed Project';
     const picture = project.metadata?.picture || project.profile?.picture;
     const about = project.metadata?.about || project.profile?.about || 'No description available';
@@ -19,8 +25,8 @@ export const ProjectItem = memo(
 
     return (
       <Link 
-        className="flex gap-2 group" 
-        to={npub ? `/profile/${npub}` : '#'}
+        to={`/project/${project.projectIdentifier}`}
+        className="flex gap-2 group cursor-pointer hover:bg-secondary/40 p-2 rounded-md"
       >
         <Avatar className="w-8 h-8 bg-secondary">
           <AvatarImage src={picture} alt="project-image" className="object-cover" />

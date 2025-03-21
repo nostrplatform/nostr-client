@@ -242,6 +242,7 @@ const Layout = () => {
 const HomePage = () => import('./home');
 const NotePage = () => import('./note');
 const ProfilePage = () => import('./profile');
+const ProjectPage = () => import('./project');
 const MessagesPage = () => import('./messages');
 const NotificationsPage = () => import('./notifications');
 const RelaysPage = () => import('./relays');
@@ -267,6 +268,12 @@ export const router = createBrowserRouter([
         path: '/profile/:npub',
         async lazy() {
           return { Component: (await ProfilePage()).ProfilePage };
+        },
+      },
+      {
+        path: '/project/:projectId',
+        async lazy() {
+          return { Component: (await ProjectPage()).ProjectPage };
         },
       },
       {
