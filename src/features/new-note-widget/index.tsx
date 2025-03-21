@@ -1,6 +1,6 @@
 import { NDKEvent } from '@nostr-dev-kit/ndk';
-import { CornerDownRightIcon, MicIcon, SmileIcon } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { AtSign, CornerDownRightIcon, Hash, MicIcon, SmileIcon, Users } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
 import { Button } from '@/shared/components/ui/button';
@@ -10,13 +10,17 @@ import { FloatingEmojiPicker } from '@/shared/components/emoji-picker';
 import { cn } from '@/shared/utils';
 
 import { useNewNoteWidget } from './hooks';
+import { ContactSearchModal } from '../messages-widget/components/contact-search-modal';
 
 export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent | undefined }) => {
   const { content, post, setContent, profile } = useNewNoteWidget({ replyingToEvent });
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showContactsModal, setShowContactsModal] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [recognition, setRecognition] = useState<any>(null);
+  const [selectedMention, setSelectedMention] = useState<{start: number, end: number} | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const onEmojiClick = (emojiData: any) => {
     setContent((prev) => prev + emojiData.emoji);
@@ -35,6 +39,46 @@ export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent 
   const handleCancel = () => {
     setContent('');
     setIsFocused(false); // Only collapse the form when cancel is clicked
+  };
+
+  const handleMentionSelect = (user: any) => {
+    if (!textareaRef.current || selectedMention === null) return;
+    
+    const beforeMention = content.substring(0, selectedMention.start);
+    const afterMention = content.substring(selectedMention.end);
+    
+    // Replace the current @mention text with the selected user's name or npub
+    const newText = `${beforeMention}@${user.npub} ${afterMention}`;
+    setContent(newText);
+    
+    // Reset mention selection state
+    setSelectedMention(null);
+    setShowContactsModal(false);
+    
+    // Focus back on the textarea after selection
+    setTimeout(() => {
+      textareaRef.current?.focus();
+    }, 100);
+  };
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newValue = e.target.value;
+    setContent(newValue);
+    
+    // Find if cursor is positioned at a mention
+    const cursorPos = e.target.selectionStart || 0;
+    const textBeforeCursor = newValue.substring(0, cursorPos);
+    
+    // Check if we're typing a mention (after @)
+    const mentionMatch = /@(\w*)$/.exec(textBeforeCursor);
+    if (mentionMatch) {
+      const start = mentionMatch.index;
+      const end = start + mentionMatch[0].length;
+      setSelectedMention({ start, end });
+      setShowContactsModal(true);
+    } else {
+      setSelectedMention(null);
+    }
   };
 
   const handleSpeechToText = () => {
@@ -120,12 +164,13 @@ export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent 
                 )}
               >
                 <Textarea
+                  ref={textareaRef}
                   className={cn(
                     "bg-background w-full resize-none p-0 border-0 focus-visible:ring-0 transition-all duration-300",
                     isFocused || content ? "min-h-[100px]" : "min-h-[28px]"
                   )}
                   value={content}
-                  onChange={(e) => setContent(e.target.value)}
+                  onChange={handleInputChange}
                   onFocus={() => setIsFocused(true)}
                   placeholder="What's on your mind?"
                   maxLength={maxCharacters}
@@ -155,6 +200,7 @@ export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent 
                       <SmileIcon size={18} />
                     </Button>
                   </FloatingEmojiPicker>
+ 
 
                   <Button
                     variant="ghost"
@@ -195,10 +241,32 @@ export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent 
                   </div>
                 </div>
               </div>
+              
+              {/* <div className={cn(
+                "flex mt-2 gap-1 text-xs text-muted-foreground transition-opacity",
+                isFocused ? "opacity-100" : "opacity-0"
+              )}>
+                <div className="flex items-center gap-1">
+                  <AtSign size={12} />
+                  <span>@username for mentions</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Hash size={12} />
+                  <span>#hashtag for topics</span>
+                </div>
+              </div> */}
             </div>
           </div>
         </div>
       </div>
+      
+      {/* Contact search modal for mentions */}
+      <ContactSearchModal 
+        isOpen={showContactsModal}
+        onClose={() => setShowContactsModal(false)}
+        onSelect={handleMentionSelect}
+        searchQuery={selectedMention ? content.substring(selectedMention.start + 1, selectedMention.end) : ''}
+      />
     </div>
   );
 };
