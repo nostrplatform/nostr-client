@@ -355,7 +355,61 @@ export const ProjectPage = () => {
                       <div className="prose dark:prose-invert max-w-none">
                         {(() => {
                           try {
-                            const jsonContent = JSON.parse(extraDetails.content || '{}');
+                            // Safely parse JSON content with better error handling
+                            interface ProjectContent {
+                              nostrPubKey?: string;
+                              projectIdentifier?: string;
+                              founderKey?: string;
+                              founderRecoveryKey?: string;
+                              startDate?: number;
+                              expiryDate?: number;
+                              targetAmount?: number;
+                              penaltyDays?: number;
+                              stages?: Array<{
+                                releaseDate: number;
+                                amountToRelease: number;
+                              }>;
+                              projectSeeders?: {
+                                threshold: number;
+                                secretHashes: string[];
+                              };
+                              [key: string]: any; // Allow additional string keys
+                            }
+                            
+                            let jsonContent: ProjectContent = {};
+                            if (extraDetails.content) {
+                              try {
+                                jsonContent = JSON.parse(extraDetails.content) as ProjectContent;
+                                console.log("Parsed JSON content successfully:", jsonContent);
+                              } catch (error) {
+                                console.error("Failed to parse JSON content:", error);
+                                // Return the raw content if parsing fails
+                                return <p className="whitespace-pre-wrap">{extraDetails.content || about}</p>;
+                              }
+                            } else {
+                              // If no extraDetails.content, just show the about info
+                              return <p className="whitespace-pre-wrap">{about}</p>;
+                            }
+
+                            // Check if jsonContent is actually an object
+                            if (typeof jsonContent !== 'object' || jsonContent === null) {
+                              console.error("JSON content is not an object:", jsonContent);
+                              return <p className="whitespace-pre-wrap">{extraDetails.content || about}</p>;
+                            }
+
+                            // Format timestamps to human-readable dates
+                            const formatTimestamp = (timestamp: number) => {
+                              if (!timestamp) return "N/A";
+                              try {
+                                return new Date(timestamp * 1000).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                });
+                              } catch (e) {
+                                return String(timestamp);
+                              }
+                            };
 
                             // Group data into categories for better organization
                             const groups = {
@@ -375,8 +429,9 @@ export const ProjectPage = () => {
                                   </CardHeader>
                                   <CardContent className="pt-6">
                                     <div className="grid gap-4 md:grid-cols-2">
-                                      {groups.overview.map(key => (
-                                        jsonContent[key] && (
+                                      {groups.overview.map(key => {
+                                        if (!jsonContent[key]) return null;
+                                        return (
                                           <div key={key} className="flex items-start gap-2 overflow-hidden">
                                             <div className="rounded-md bg-primary/10 p-2">
                                               <Key className="h-4 w-4 text-primary" />
@@ -390,48 +445,50 @@ export const ProjectPage = () => {
                                               </p>
                                             </div>
                                           </div>
-                                        )
-                                      ))}
+                                        );
+                                      })}
                                     </div>
                                   </CardContent>
                                 </Card>
 
                                 {/* Timeline Section */}
-                                <Card>
-                                  <CardHeader className="bg-muted/40">
-                                    <CardTitle className="text-lg">Project Timeline</CardTitle>
-                                  </CardHeader>
-                                  <CardContent className="pt-6">
-                                    <div className="flex justify-between items-center">
-                                      <div className="text-center flex-1">
-                                        <Calendar className="h-8 w-8 mx-auto text-primary/60" />
-                                        <p className="mt-2 font-medium">Start Date</p>
-                                        <p className="text-sm text-muted-foreground">
-                                          {formatDate(jsonContent.startDate)}
-                                        </p>
+                                {(jsonContent.startDate || jsonContent.expiryDate || jsonContent.penaltyDays) && (
+                                  <Card>
+                                    <CardHeader className="bg-muted/40">
+                                      <CardTitle className="text-lg">Project Timeline</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="pt-6">
+                                      <div className="flex justify-between items-center">
+                                        <div className="text-center flex-1">
+                                          <Calendar className="h-8 w-8 mx-auto text-primary/60" />
+                                          <p className="mt-2 font-medium">Start Date</p>
+                                          <p className="text-sm text-muted-foreground">
+                                            {jsonContent.startDate ? formatTimestamp(jsonContent.startDate) : "N/A"}
+                                          </p>
+                                        </div>
+                                        <div className="h-px w-full max-w-[100px] bg-border" />
+                                        <div className="text-center flex-1">
+                                          <Clock className="h-8 w-8 mx-auto text-primary/60" />
+                                          <p className="mt-2 font-medium">Penalty Period</p>
+                                          <p className="text-sm text-muted-foreground">
+                                            {jsonContent.penaltyDays || "N/A"} Days
+                                          </p>
+                                        </div>
+                                        <div className="h-px w-full max-w-[100px] bg-border" />
+                                        <div className="text-center flex-1">
+                                          <Timer className="h-8 w-8 mx-auto text-primary/60" />
+                                          <p className="mt-2 font-medium">End Date</p>
+                                          <p className="text-sm text-muted-foreground">
+                                            {jsonContent.expiryDate ? formatTimestamp(jsonContent.expiryDate) : "N/A"}
+                                          </p>
+                                        </div>
                                       </div>
-                                      <div className="h-px w-full max-w-[100px] bg-border" />
-                                      <div className="text-center flex-1">
-                                        <Clock className="h-8 w-8 mx-auto text-primary/60" />
-                                        <p className="mt-2 font-medium">Penalty Period</p>
-                                        <p className="text-sm text-muted-foreground">
-                                          {jsonContent.penaltyDays} Days
-                                        </p>
-                                      </div>
-                                      <div className="h-px w-full max-w-[100px] bg-border" />
-                                      <div className="text-center flex-1">
-                                        <Timer className="h-8 w-8 mx-auto text-primary/60" />
-                                        <p className="mt-2 font-medium">End Date</p>
-                                        <p className="text-sm text-muted-foreground">
-                                          {formatDate(jsonContent.expiryDate)}
-                                        </p>
-                                      </div>
-                                    </div>
-                                  </CardContent>
-                                </Card>
+                                    </CardContent>
+                                  </Card>
+                                )}
 
                                 {/* Stages Section */}
-                                {jsonContent.stages && jsonContent.stages.length > 0 && (
+                                {jsonContent.stages && Array.isArray(jsonContent.stages) && jsonContent.stages.length > 0 && (
                                   <Card>
                                     <CardHeader className="bg-muted/40">
                                       <CardTitle className="text-lg">Funding Stages</CardTitle>
@@ -440,27 +497,30 @@ export const ProjectPage = () => {
                                       <div className="relative">
                                         <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border" />
                                         <div className="space-y-6">
-                                          {jsonContent.stages.map((stage: any, idx: number) => (
-                                            <div key={idx} className="relative pl-8">
-                                              <div className="absolute left-0 w-8 flex items-center justify-center">
-                                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary border-4 border-background">
-                                                  {idx + 1}
+                                          {jsonContent.stages.map((stage: any, idx: number) => {
+                                            if (!stage) return null;
+                                            return (
+                                              <div key={idx} className="relative pl-8">
+                                                <div className="absolute left-0 w-8 flex items-center justify-center">
+                                                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary border-4 border-background">
+                                                    {idx + 1}
+                                                  </div>
+                                                </div>
+                                                <div className="bg-muted rounded-lg p-4">
+                                                  <div className="flex justify-between items-center mb-2">
+                                                    <h4 className="font-medium">Stage {idx + 1}</h4>
+                                                    <Badge variant="outline">
+                                                      {stage.releaseDate ? formatTimestamp(stage.releaseDate) : "N/A"}
+                                                    </Badge>
+                                                  </div>
+                                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                    <CircleDollarSign className="h-4 w-4" />
+                                                    <span>Release Amount: {stage.amountToRelease ? satoshiToBitcoin(stage.amountToRelease) : "0"} BTC</span>
+                                                  </div>
                                                 </div>
                                               </div>
-                                              <div className="bg-muted rounded-lg p-4">
-                                                <div className="flex justify-between items-center mb-2">
-                                                  <h4 className="font-medium">Stage {idx + 1}</h4>
-                                                  <Badge variant="outline">
-                                                    {formatDate(stage.releaseDate)}
-                                                  </Badge>
-                                                </div>
-                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                  <CircleDollarSign className="h-4 w-4" />
-                                                  <span>Release Amount: {satoshiToBitcoin(stage.amountToRelease)} BTC</span>
-                                                </div>
-                                              </div>
-                                            </div>
-                                          ))}
+                                            );
+                                          })}
                                         </div>
                                       </div>
                                     </CardContent>
@@ -468,7 +528,7 @@ export const ProjectPage = () => {
                                 )}
 
                                 {/* Project Seeders */}
-                                {jsonContent.projectSeeders && (
+                                {jsonContent.projectSeeders && typeof jsonContent.projectSeeders === 'object' && (
                                   <Card>
                                     <CardHeader className="bg-muted/40">
                                       <CardTitle className="text-lg">Project Seeders</CardTitle>
@@ -478,9 +538,11 @@ export const ProjectPage = () => {
                                         <div className="flex items-center gap-2">
                                           <Shield className="h-5 w-5 text-primary/60" />
                                           <span className="font-medium">Threshold:</span>
-                                          <span>{jsonContent.projectSeeders.threshold}</span>
+                                          <span>{jsonContent.projectSeeders.threshold || "N/A"}</span>
                                         </div>
-                                        {jsonContent.projectSeeders.secretHashes?.length > 0 && (
+                                        {jsonContent.projectSeeders.secretHashes && 
+                                         Array.isArray(jsonContent.projectSeeders.secretHashes) && 
+                                         jsonContent.projectSeeders.secretHashes.length > 0 && (
                                           <div className="space-y-2">
                                             <p className="font-medium flex items-center gap-2">
                                               <Key className="h-4 w-4 text-primary/60" />
@@ -499,10 +561,32 @@ export const ProjectPage = () => {
                                     </CardContent>
                                   </Card>
                                 )}
+
+                                {/* Raw JSON Debug - in development only */}
+                                {process.env.NODE_ENV !== 'production' && (
+                                  <details className="mt-8">
+                                    <summary className="text-sm text-muted-foreground cursor-pointer hover:text-foreground">
+                                      Debug: Show Raw JSON Data
+                                    </summary>
+                                    <pre className="mt-2 p-4 bg-muted/50 rounded-md overflow-auto text-xs">
+                                      {JSON.stringify(jsonContent, null, 2)}
+                                    </pre>
+                                  </details>
+                                )}
                               </div>
                             );
                           } catch (e) {
-                            return <p className="whitespace-pre-wrap">{extraDetails.content || about}</p>;
+                            console.error("Error rendering project content:", e);
+                            return (
+                              <div>
+                                <p className="whitespace-pre-wrap">{extraDetails.content || about}</p>
+                                {process.env.NODE_ENV !== 'production' && (
+                                  <div className="mt-4 p-4 border border-destructive/20 bg-destructive/5 rounded-md">
+                                    <p className="text-destructive text-sm">Error parsing content: {String(e)}</p>
+                                  </div>
+                                )}
+                              </div>
+                            );
                           }
                         })()}
                       </div>
