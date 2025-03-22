@@ -56,7 +56,7 @@ export const UsersList = memo(() => {
 
   return (
     <div className="flex flex-col w-full h-full">
-      <div className="p-4 border-b">
+      <div className="p-4 border-b hidden md:block">
         <Input
           type="search"
           placeholder="Search by name, npub or NIP-05..."
