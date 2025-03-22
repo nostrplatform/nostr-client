@@ -1,6 +1,5 @@
 import { NDKUser } from '@nostr-dev-kit/ndk';
 import { useState, useEffect } from 'react';
-import { useActiveUser } from 'nostr-hooks';
 import { Loader2, User, UserPlus, Search, X } from 'lucide-react';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog';
@@ -26,7 +25,6 @@ export const ContactSearchModal = ({
 }: ContactSearchModalProps) => {
   const [query, setQuery] = useState(searchQuery);
   const [activeTab, setActiveTab] = useState<string>(searchQuery ? "search" : "contacts");
-  const { activeUser } = useActiveUser();
   const { contacts, isLoading, filterContacts, searchContacts } = useContacts();
   const [filteredContacts, setFilteredContacts] = useState<NDKUser[]>([]);
   const [searchResults, setSearchResults] = useState<NDKUser[]>([]);

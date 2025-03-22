@@ -4,7 +4,7 @@ import { AtSign } from 'lucide-react';
 import { Textarea } from '@/shared/components/ui/textarea';
 import { Button } from '@/shared/components/ui/button';
 import { ContactSearchModal } from '../contact-search-modal';
-import { formatUserMention, insertMentionInText } from '../message-input/mention-helpers';
+import { insertMentionInText } from '../message-input/mention-helpers';
 
 // Your existing imports and component props...
 

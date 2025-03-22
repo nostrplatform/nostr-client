@@ -1,5 +1,5 @@
 import { NDKEvent } from '@nostr-dev-kit/ndk';
-import { AtSign, CornerDownRightIcon, Hash, MicIcon, SmileIcon, Users } from 'lucide-react';
+import { CornerDownRightIcon, MicIcon, SmileIcon } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';

@@ -42,6 +42,7 @@ export const MentionSearch = memo(
       });
     }, [ndk, query]);
 
+
     const handleSelectUser = (event: NDKEvent) => {
       const user = new NDKUser({ pubkey: event.pubkey });
       if (event.content) {

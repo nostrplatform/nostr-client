@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { NDKUser } from '@nostr-dev-kit/ndk';
 import { AtSign } from 'lucide-react';
 import { Textarea } from '@/shared/components/ui/textarea';

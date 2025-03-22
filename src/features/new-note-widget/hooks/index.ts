@@ -1,4 +1,4 @@
-import { NDKEvent, NDKUser } from '@nostr-dev-kit/ndk';
+import { NDKEvent } from '@nostr-dev-kit/ndk';
 import { useActiveUser, useNdk } from 'nostr-hooks';
 import { useCallback, useEffect, useState } from 'react';
 
