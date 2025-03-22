@@ -1,4 +1,4 @@
-import { NDKUser, NDKEvent } from '@nostr-dev-kit/ndk';
+import { NDKUser, NDKEvent, NDKRelaySet } from '@nostr-dev-kit/ndk';
 import { useNdk } from 'nostr-hooks';
 import { memo, useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
@@ -32,8 +32,7 @@ export const MentionSearch = memo(
       ndk.fetchEvents(
         [filter],
         { closeOnEose: true },
-        undefined,
-        [searchRelay],
+        NDKRelaySet.fromRelayUrls([searchRelay], ndk),
       ).then((results) => {
         setEvents(Array.from(results));
       }).catch((error) => {

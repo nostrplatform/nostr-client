@@ -20,7 +20,7 @@ export const MentionSearchItem = memo(
           if (extractedProfile.nip05 && typeof extractedProfile.nip05 === 'string') {
             try {
               const validated = await event.author.validateNip05(extractedProfile.nip05);
-              setIsValidated(validated);
+              setIsValidated(!!validated);
             } catch (e) {
               console.error("Failed to validate NIP-05:", e);
             }
