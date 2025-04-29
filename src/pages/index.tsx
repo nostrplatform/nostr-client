@@ -1,4 +1,5 @@
 import {
+  AwardIcon, // Import AwardIcon
   BellIcon,
   BookmarkIcon,
   CompassIcon,
@@ -101,6 +102,16 @@ const Layout = () => {
               <span className="hidden xl:block">Relays</span>
             </Link>
 
+            <Link
+              to="/badges" // Add link to badges page
+              className="flex items-center gap-2 p-2 transition-colors duration-500 ease-out text-primary/60 hover:text-primary w-full rounded-lg hover:bg-secondary"
+            >
+              <div>
+                <AwardIcon size={24} /> {/* Use AwardIcon */}
+              </div>
+              <span className="hidden xl:block">Badges</span>
+            </Link>
+
             <SearchWidget>
               <div className="flex items-center gap-2 p-2 transition-colors duration-500 ease-out text-primary/60 hover:text-primary w-full rounded-lg hover:bg-secondary hover:cursor-pointer">
                 <div>
@@ -194,6 +205,15 @@ const Layout = () => {
               </Link>
                     
               <Link
+                to="/badges" // Add link to badges page
+                className="flex items-center gap-2 transition-colors duration-500 ease-out text-primary/60 hover:text-primary"
+              >
+                <div>
+                  <AwardIcon size={28} strokeWidth={1.4} /> {/* Use AwardIcon */}
+                </div>
+              </Link>
+
+              <Link
                 to="/notifications"
                 className="flex items-center gap-2 transition-colors duration-500 ease-out text-primary/60 hover:text-primary"
               >
@@ -202,7 +222,7 @@ const Layout = () => {
                 </div>
               </Link>
 
- 
+
             </div>
           </div>
         </div>
@@ -247,6 +267,8 @@ const MessagesPage = () => import('./messages');
 const NotificationsPage = () => import('./notifications');
 const RelaysPage = () => import('./relays');
 const ExplorePage = () => import('./explore');
+const BadgesPage = () => import('./badges'); // Import the new BadgesPage
+
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -304,6 +326,12 @@ export const router = createBrowserRouter([
         path: '/explore',
         async lazy() {
           return { Component: (await ExplorePage()).ExplorePage };
+        },
+      },
+      { // Add route for badges page
+        path: '/badges',
+        async lazy() {
+          return { Component: (await BadgesPage()).BadgesPage };
         },
       },
     ],
