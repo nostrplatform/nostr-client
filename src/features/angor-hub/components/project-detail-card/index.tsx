@@ -6,7 +6,7 @@ import {
   Twitter, Github, Mail, ExternalLink, Shield
 } from 'lucide-react';
 
-import { IndexedProject, ProjectStats, ExternalIdentity } from '../../types';
+import { IndexedProject, ProjectStats } from '../../types';
 import { satoshiToBitcoin } from '@/shared/utils/bitcoin';
 import { formatDate, getSocialIcon, getSocialLink } from '../../utils/project';
 import { Button } from '@/shared/components/ui/button';
