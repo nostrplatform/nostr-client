@@ -1,8 +1,11 @@
 import { useParams } from 'react-router-dom';
-import { ChevronLeft, ExternalLink, Calendar, User, Clock, CircleDollarSign, Shield, Key, Timer } from 'lucide-react';
+import { ChevronLeft, ExternalLink, User, CircleDollarSign, Key, Calendar, Clock, Timer, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { nip19 } from 'nostr-tools';
+import { useEffect, useState } from 'react';
+import { motion } from "framer-motion";
 
+// UI Components
 import { Button } from '@/shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Spinner } from '@/shared/components/spinner';
@@ -11,38 +14,37 @@ import { Badge } from '@/shared/components/ui/badge';
 import { Progress } from '@/shared/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { Skeleton } from "@/shared/components/ui/skeleton";
-import { motion } from "framer-motion";
 
+// Feature Components & Hooks
 import { useAngorProject } from '@/features/angor-hub/hooks';
-import { satoshiToBitcoin } from '@/shared/utils/bitcoin';
-import { useEffect, useState } from 'react';
 import { AngorNostrService } from '@/features/angor-hub/services/nostr';
 import { ProjectMediaGallery } from '@/features/angor-hub/components/project-media-gallery';
 import { ProjectFAQ } from '@/features/angor-hub/components/project-faq';
 import { ProjectMembers } from '@/features/angor-hub/components/project-members';
-
-// Import our new components
 import { ProjectDetailCard } from '@/features/angor-hub/components/project-detail-card';
 import { ProjectSocialLinks } from '@/features/angor-hub/components/project-social-links';
+
+// Utils
+import { satoshiToBitcoin } from '@/shared/utils/bitcoin';
 import { getProgressColor, getProjectStatus, getRemainingTime, getSpentPercentage, getPenaltiesPercentage } from '@/features/angor-hub/utils/project';
 
-// Add loading skeleton component
+// Loading Skeleton Component
 const ProjectSkeleton = () => (
-  <div className="space-y-4 animate-pulse">
+  <div className="space-y-4 animate-pulse p-4">
     <Skeleton className="h-8 w-48" />
     <Skeleton className="h-[200px] w-full rounded-xl" />
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <Skeleton className="h-[120px]" />
-      <Skeleton className="h-[120px]" />
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <Skeleton className="h-[120px] md:col-span-1" />
+      <Skeleton className="h-[120px] md:col-span-2" />
     </div>
   </div>
 );
 
-// Add custom progress bar component
-const AnimatedProgress = ({ value }: { value: number }) => (
-  <div className="relative h-2 w-full bg-secondary rounded-full overflow-hidden">
+// Animated Progress Bar Component
+const AnimatedProgress = ({ value, colorClass }: { value: number; colorClass: string }) => (
+  <div className="relative h-2 w-full bg-muted-foreground/20 rounded-full overflow-hidden">
     <motion.div
-      className="absolute h-full bg-primary"
+      className={`absolute h-full ${colorClass}`}
       initial={{ width: 0 }}
       animate={{ width: `${value}%` }}
       transition={{ duration: 1, ease: "easeOut" }}
@@ -50,23 +52,23 @@ const AnimatedProgress = ({ value }: { value: number }) => (
   </div>
 );
 
-// Add this new component near the top of the file after imports
+// Expandable Description Text Component
 const DescriptionText = ({ text }: { text: string }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const maxLength = 280; // Approximately 3 lines of text
+  const maxLength = 200; // Adjust length as needed
   const shouldShowButton = text.length > maxLength;
 
   return (
-    <div className="space-y-2">
-      <p className={`text-base md:text-lg text-muted-foreground leading-relaxed ${!isExpanded && "line-clamp-3"}`}>
+    <div className="space-y-1">
+      <p className={`text-sm sm:text-base text-muted-foreground leading-relaxed ${!isExpanded && "line-clamp-3"}`}>
         {text}
       </p>
       {shouldShowButton && (
         <Button
-          variant="ghost"
+          variant="link"
           size="sm"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="text-primary hover:text-primary/80"
+          className="text-primary hover:text-primary/80 px-0 h-auto py-0"
         >
           {isExpanded ? 'Show less' : 'Show more'}
         </Button>
@@ -75,6 +77,7 @@ const DescriptionText = ({ text }: { text: string }) => {
   );
 };
 
+// Main Project Page Component
 export const ProjectPage = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
@@ -89,15 +92,14 @@ export const ProjectPage = () => {
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const nostrService = AngorNostrService.getInstance();
 
+  // Fetch extra details (content, media, members, faq)
   useEffect(() => {
     const fetchExtraDetails = async () => {
       if (!project || !project.details?.nostrPubKey) return;
 
+      setIsLoadingDetails(true);
       try {
-        setIsLoadingDetails(true);
-        console.log("Fetching project content for:", project.details.nostrPubKey);
         const data = await nostrService.fetchProjectContent(project.details.nostrPubKey);
-        console.log("Fetched project extra details:", data);
         setExtraDetails({
           content: data.content,
           media: data.media,
@@ -105,29 +107,30 @@ export const ProjectPage = () => {
           faq: data.faq
         });
       } catch (err) {
-        console.error("Error fetching project details:", err);
+        console.error("Error fetching project extra details:", err);
       } finally {
         setIsLoadingDetails(false);
       }
     };
 
     fetchExtraDetails();
-  }, [project]);
+  }, [project, nostrService]); // Added nostrService dependency
 
-
+  // Loading State
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center p-8 h-full">
         <Spinner />
-        <p className="mt-4">Loading project details...</p>
+        <p className="mt-4 text-muted-foreground">Loading project details...</p>
       </div>
     );
   }
 
+  // Project Not Found State
   if (!project) {
     return (
       <div className="flex flex-col items-center justify-center p-8">
-        <p className="text-xl">Project not found</p>
+        <p className="text-xl font-semibold">Project not found</p>
         <Button onClick={() => navigate(-1)} variant="ghost" className="mt-4">
           <ChevronLeft className="mr-2 h-4 w-4" />
           Go Back
@@ -136,206 +139,143 @@ export const ProjectPage = () => {
     );
   }
 
-  // Extract project details
+  // --- Prepare Data for Display ---
   const name = project.metadata?.name || project.profile?.name || 'Unnamed Project';
   const banner = project.metadata?.banner || project.profile?.banner;
   const picture = project.metadata?.picture || project.profile?.picture;
-  const about = project.metadata?.about || project.profile?.about || 'No description available';
+  const about = project.metadata?.about || project.profile?.about || 'No description available.';
   const website = project.metadata?.website;
   const lud16 = project.metadata?.lud16;
   const nip05 = project.metadata?.nip05;
+  const npub = project.details?.nostrPubKey ? nip19.npubEncode(project.details.nostrPubKey) : undefined;
+  const projectStatus = getProjectStatus(project.details);
 
-
-  // Create a npub if we have the Nostr pubkey
-  const npub = project.details?.nostrPubKey ?
-    nip19.npubEncode(project.details.nostrPubKey) :
-    undefined;
-
-  // Add financial data processing
+  // Process Financial Data
   const processFinancialData = () => {
     if (!stats || !project.details?.targetAmount) return null;
-    
     const targetAmount = project.details.targetAmount;
     const currentAmount = stats.amountInvested;
-    const spentAmount = stats.amountSpentSoFarByFounder;
-    const penaltiesAmount = stats.amountInPenalties;
-    
     const progressPercentage = targetAmount > 0 ? Math.min(Math.round((currentAmount / targetAmount) * 100), 100) : 0;
-    const spentPercentage = getSpentPercentage({ amountSpentSoFarByFounder: spentAmount, amountInvested: currentAmount });
-    const penaltiesPercentage = getPenaltiesPercentage({ amountInPenalties: penaltiesAmount, amountInvested: currentAmount });
-    
     return {
       targetAmount,
       currentAmount,
-      spentAmount,
-      penaltiesAmount,
+      spentAmount: stats.amountSpentSoFarByFounder,
+      penaltiesAmount: stats.amountInPenalties,
+      investorCount: stats.investorCount,
+      penaltyCount: stats.countInPenalties,
       progressPercentage,
-      spentPercentage,
-      penaltiesPercentage,
+      spentPercentage: getSpentPercentage({ amountSpentSoFarByFounder: stats.amountSpentSoFarByFounder, amountInvested: currentAmount }),
+      penaltiesPercentage: getPenaltiesPercentage({ amountInPenalties: stats.amountInPenalties, amountInvested: currentAmount }),
       progressColor: getProgressColor(progressPercentage),
       timeRemaining: getRemainingTime(project.details.expiryDate),
-      status: getProjectStatus(project.details)
     };
   };
-  
   const financialData = processFinancialData();
-  const projectStatus = getProjectStatus(project.details);
 
+  // --- Render Component ---
   return (
-    <div className="flex flex-col space-y-6 p-4 pb-16">
-      {/* Header with back button */}
+    <div className="flex flex-col space-y-4 sm:space-y-6 p-2 sm:p-4 pb-16 max-w-7xl mx-auto w-full">
+      {/* Header */}
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="Go back">
           <ChevronLeft />
         </Button>
-        <h2 className="text-xl font-bold">Project</h2>
+        <h2 className="text-lg sm:text-xl font-semibold truncate">Project Details</h2>
       </div>
 
-      {/* Simplified Hero Section */}
-      <Card className="border shadow-md overflow-hidden">
-        <div className="relative">
-          {/* Banner Image */}
-          <div className="relative w-full h-[200px] md:h-[300px] overflow-hidden rounded-t-xl">
-            {banner ? (
-              <img
-                src={banner}
-                alt={`${name} banner`}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10" />
-            )}
-            {/* Overlay gradient */}
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
-          </div>
+      {/* Hero Section */}
+      <Card className="border shadow-sm overflow-hidden">
+        {/* Banner */}
+        <div className="relative w-full h-[150px] sm:h-[200px] md:h-[250px] bg-muted">
+          {banner ? (
+            <img src={banner} alt={`${name} banner`} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
+        </div>
 
-          {/* Profile Content */}
-          <div className="relative -mt-24 px-4 md:px-8 pb-8">
-            <div className="flex flex-col md:flex-row gap-6 items-start">
-              {/* Large Profile Avatar */}
-              <div className="relative">
-                <Avatar className="w-32 h-32 md:w-40 md:h-40 border-4 border-background rounded-full shadow-xl">
-                  <AvatarImage src={picture} alt={name} className="object-cover" />
-                  <AvatarFallback className="text-4xl font-bold">
-                    {name.substring(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                
-                {/* Project Status Badge */}
-                <div className="absolute -bottom-2 left-0 right-0 flex justify-center">
-                  <Badge 
-                    className={`
-                      ${projectStatus === 'active' ? 'bg-green-500' : ''}
-                      ${projectStatus === 'upcoming' ? 'bg-blue-500' : ''}
-                      ${projectStatus === 'completed' ? 'bg-orange-500' : ''}
-                      text-white border-none px-4
-                    `}
-                  >
-                    {projectStatus.charAt(0).toUpperCase() + projectStatus.slice(1)}
+        {/* Profile Content */}
+        <div className="relative -mt-16 sm:-mt-20 px-3 sm:px-6 pb-6">
+          <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-center md:items-end">
+            {/* Avatar & Status */}
+            <div className="relative flex-shrink-0">
+              <Avatar className="w-24 h-24 sm:w-32 sm:h-32 border-4 border-background rounded-full shadow-lg">
+                <AvatarImage src={picture} alt={name} className="object-cover" />
+                <AvatarFallback className="text-2xl sm:text-3xl font-bold">
+                  {name.substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="absolute -bottom-2 left-0 right-0 flex justify-center">
+                <Badge
+                  className={`text-xs sm:text-sm border-none px-3 py-1
+                    ${projectStatus === 'active' ? 'bg-green-500 text-white' : ''}
+                    ${projectStatus === 'upcoming' ? 'bg-blue-500 text-white' : ''}
+                    ${projectStatus === 'completed' ? 'bg-gray-500 text-white' : ''}
+                  `}
+                >
+                  {projectStatus.charAt(0).toUpperCase() + projectStatus.slice(1)}
+                </Badge>
+              </div>
+            </div>
+
+            {/* Project Info & Actions */}
+            <div className="flex-1 flex flex-col md:flex-row justify-between items-center md:items-end gap-4 w-full mt-2 md:mt-0">
+              <div className="text-center md:text-left space-y-1">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight line-clamp-2 break-words">
+                  {name}
+                </h1>
+                <DescriptionText text={about} />
+                {nip05 && (
+                  <Badge variant="outline" className="text-xs truncate max-w-full">
+                    {nip05}
                   </Badge>
-                </div>
+                )}
               </div>
-
-              {/* Project Info */}
-              <div className="flex-1 space-y-6 md:space-y-8">
-                {/* Project Title and Description */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                  className="space-y-4"
+              {/* Action Buttons */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="flex flex-wrap items-center justify-center md:justify-end gap-2 flex-shrink-0"
+              >
+                <Button
+                  size="sm"
+                  onClick={() => window.open(`https://test.angor.io/view/${projectId}`, '_blank')}
+                  aria-label="Invest Now"
                 >
-                  <div className="space-y-2">
-                    <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold tracking-tight">
-                      {name}
-                    </h1>
-                    <DescriptionText text={about} />
-                  </div>
-
-                  {/* Project Status Badge */}
-                  <div className="flex items-center gap-2">
-                    {nip05 && (
-                      <Badge variant="outline" className="text-muted-foreground">
-                        {nip05}
-                      </Badge>
-                    )}
-                  </div>
-                </motion.div>
-
-                {/* Action Buttons */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                  className="flex flex-wrap items-center gap-3"
-                >
-                  <Button
-                    variant="default"
-                    size="lg"
-                    className="relative group"
-                    onClick={() => window.open(`https://test.angor.io/view/${projectId}`, '_blank')}
-                  >
-                    <ExternalLink className="h-5 w-5 mr-2 transition-transform group-hover:scale-110" />
-                    <span>Invest Now</span>
+                  <ExternalLink className="h-4 w-4 mr-2" /> Invest
+                </Button>
+                {website && (
+                  <Button variant="outline" size="sm" onClick={() => window.open(website.startsWith('http') ? website : `https://${website}`, '_blank')} aria-label="Visit Website">
+                    <ExternalLink className="h-4 w-4 mr-2" /> Website
                   </Button>
-                  
-                  {website && (
-                    <Button
-                      variant="ghost"
-                      size="lg"
-                      className="relative group hover:bg-muted/50"
-                      onClick={() => window.open(website?.startsWith('http') ? website : `https://${website}`, '_blank')}
-                    >
-                      <ExternalLink className="h-5 w-5 mr-2 transition-transform group-hover:scale-110" />
-                      <span>Visit Website</span>
-                    </Button>
-                  )}
-
-                  {npub && (
-                    <Button
-                      variant="ghost"
-                      size="lg"
-                      className="relative group hover:bg-muted/50"
-                      onClick={() => navigate(`/profile/${npub}`)}
-                    >
-                      <User className="h-5 w-5 mr-2 transition-transform group-hover:scale-110" />
-                      <span>View Profile</span>
-                    </Button>
-                  )}
-
-                  {lud16 && (
-                    <Button
-                      variant="ghost"
-                      size="lg"
-                      className="relative group hover:bg-muted/50"
-                    >
-                      <CircleDollarSign className="h-5 w-5 mr-2 transition-transform group-hover:scale-110" />
-                      <span>Lightning ⚡️</span>
-                    </Button>
-                  )}
-                </motion.div>
-              </div>
+                )}
+                {npub && (
+                  <Button variant="outline" size="sm" onClick={() => navigate(`/profile/${npub}`)} aria-label="View Profile">
+                    <User className="h-4 w-4 mr-2" /> Profile
+                  </Button>
+                )}
+                {lud16 && (
+                  <Button variant="outline" size="sm" aria-label="Lightning Payment">
+                    <CircleDollarSign className="h-4 w-4 mr-2" /> ⚡️
+                  </Button>
+                )}
+              </motion.div>
             </div>
           </div>
         </div>
 
         {/* Funding Progress Bar */}
         {financialData && (
-          <div className="px-4 md:px-8 pb-6">
-            <div className="bg-muted rounded-lg p-4">
-              <div className="flex justify-between text-sm mb-2">
+          <div className="px-3 sm:px-6 pb-4 sm:pb-6 border-t border-border">
+             <div className="bg-muted/50 rounded-lg p-3 sm:p-4 mt-4">
+              <div className="flex justify-between text-xs sm:text-sm mb-2 flex-wrap gap-1">
                 <span className="font-medium">{satoshiToBitcoin(financialData.currentAmount)} BTC raised</span>
                 <span className="text-muted-foreground">Target: {satoshiToBitcoin(financialData.targetAmount)} BTC</span>
               </div>
-              <div className="h-2 w-full bg-muted-foreground/20 rounded-full overflow-hidden">
-                <motion.div
-                  className={`h-full ${financialData.progressColor}`}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${financialData.progressPercentage}%` }}
-                  transition={{ duration: 1, ease: "easeOut" }}
-                />
-              </div>
-              <div className="flex justify-between text-sm mt-2">
+              <AnimatedProgress value={financialData.progressPercentage} colorClass={financialData.progressColor} />
+              <div className="flex justify-between text-xs sm:text-sm mt-2 flex-wrap gap-1">
                 <span className="text-primary font-medium">{financialData.progressPercentage}% Complete</span>
                 <span className="text-muted-foreground">{financialData.timeRemaining} left</span>
               </div>
@@ -344,455 +284,207 @@ export const ProjectPage = () => {
         )}
       </Card>
 
-      {/* Content area with updated layout */}
-      <div className="grid grid-cols-1 md:grid-cols-1 ">
-        {/* Left column: Project details */}
-        <div className="space-y-6">
-          {/* Project details card */}
-          <ProjectDetailCard 
+      {/* Main Content Area (Details + Tabs) */}
+      <div className="grid grid-cols-1">
+        {/* Left Column: Details & Socials */}
+        <div className="lg:col-span-1 space-y-4 sm:space-y-6">
+          <ProjectDetailCard
             project={project}
             stats={stats ?? undefined}
-            onVisitWebsite={() => {
-              if (website) {
-                window.open(website.startsWith('http') ? website : `https://${website}`, '_blank');
-              }
-            }}
+            onVisitWebsite={website ? () => window.open(website.startsWith('http') ? website : `https://${website}`, '_blank') : undefined}
           />
-          
-          {/* Social links card */}
           <ProjectSocialLinks externalIdentities={project.externalIdentities} />
         </div>
-        
-        {/* Right column: Tabs for detailed content */}
-        <div className="md:col-span-2 mt-6">
-          <Card>
-            <Tabs defaultValue="description" className="w-full p-1">
-              <TabsList className="w-full grid grid-cols-5">
-                <TabsTrigger value="description">Description</TabsTrigger>
-                <TabsTrigger value="financial">Financial</TabsTrigger>
-                <TabsTrigger value="media">Media</TabsTrigger>
-                <TabsTrigger value="team">Team</TabsTrigger>
-                <TabsTrigger value="faq">FAQ</TabsTrigger>
-              </TabsList>
 
-              {/* Description Tab */}
-              <TabsContent value="description" className="mt-4 p-4">
-                {isLoadingDetails ? (
-                  <ProjectSkeleton />
-                ) : (
-                  <div className="space-y-4">
-                    {isLoadingDetails ? (
-                      <div className="flex justify-center py-8">
-                        <Spinner />
-                      </div>
-                    ) : (
-                      <>
-                        <div className="prose dark:prose-invert max-w-none">
-                          {(() => {
-                            try {
-                              // First check if the content appears to be JSON
-                              const isLikelyJSON = (str?: string) => {
-                                if (!str) return false;
-                                const trimmed = str.trim();
-                                return (trimmed.startsWith('{') && trimmed.endsWith('}')) || 
-                                       (trimmed.startsWith('[') && trimmed.endsWith(']'));
-                              };
-                              
-                              // Check if content looks like JSON before attempting to parse
-                              const content = extraDetails.content;
-                              const shouldParseAsJSON = isLikelyJSON(content);
-                              
-                              // If it doesn't look like JSON, just display it as text
-                              if (!shouldParseAsJSON) {
-                                console.log("Content doesn't appear to be JSON, displaying as text");
-                                return (
-                                  <Card className="overflow-hidden">
-                                    <CardHeader className="bg-muted/40">
-                                      <CardTitle className="text-lg">Project Description</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="pt-6">
-                                      <p className="whitespace-pre-wrap">{content || about}</p>
-                                    </CardContent>
-                                  </Card>
-                                );
-                              }
-                              
-                              // Safely parse JSON content with better error handling
-                              interface ProjectContent {
-                                nostrPubKey?: string;
-                                projectIdentifier?: string;
-                                founderKey?: string;
-                                founderRecoveryKey?: string;
-                                startDate?: number;
-                                expiryDate?: number;
-                                targetAmount?: number;
-                                penaltyDays?: number;
-                                stages?: Array<{
-                                  releaseDate: number;
-                                  amountToRelease: number;
-                                }>;
-                                projectSeeders?: {
-                                  threshold: number;
-                                  secretHashes: string[];
-                                };
-                                [key: string]: any; // Allow additional string keys
-                              }
-                              
-                              let jsonContent: ProjectContent = {};
-                              if (content) {
-                                try {
-                                  jsonContent = JSON.parse(content) as ProjectContent;
-                                  console.log("Parsed JSON content successfully:", jsonContent);
-                                } catch (error) {
-                                  console.error("Failed to parse JSON content:", error);
-                                  // Return the raw content if parsing fails
-                                  return (
-                                    <Card className="overflow-hidden">
-                                      <CardHeader className="bg-muted/40">
-                                        <CardTitle className="text-lg">Project Description</CardTitle>
-                                      </CardHeader>
-                                      <CardContent className="pt-6">
-                                        <p className="whitespace-pre-wrap">{content || about}</p>
-                                        {process.env.NODE_ENV !== 'production' && (
-                                          <div className="mt-4 p-4 border border-yellow-500/20 bg-yellow-500/5 rounded-md">
-                                            <p className="text-yellow-500 text-sm">
-                                              Note: Content appears to be JSON format but couldn't be parsed. 
-                                              Displaying as raw text.
-                                            </p>
-                                          </div>
-                                        )}
-                                      </CardContent>
-                                    </Card>
-                                  );
-                                }
-                              } else {
-                                // If no extraDetails.content, just show the about info
-                                return (
-                                  <Card className="overflow-hidden">
-                                    <CardHeader className="bg-muted/40">
-                                      <CardTitle className="text-lg">Project Description</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="pt-6">
-                                      <p className="whitespace-pre-wrap">{about}</p>
-                                    </CardContent>
-                                  </Card>
-                                );
-                              }
+        {/* Right Column: Tabs */}
+        <div className="lg:col-span-2 mt-6">
+          <Card className="overflow-hidden">
+            <Tabs defaultValue="description" className="w-full">
+              {/* Responsive Tabs List */}
+              <div className="overflow-x-auto">
+                <TabsList className="grid w-full grid-cols-5 min-w-[400px]">
+                  <TabsTrigger value="description">Description</TabsTrigger>
+                  <TabsTrigger value="financial">Financial</TabsTrigger>
+                  <TabsTrigger value="media">Media</TabsTrigger>
+                  <TabsTrigger value="team">Team</TabsTrigger>
+                  <TabsTrigger value="faq">FAQ</TabsTrigger>
+                </TabsList>
+              </div>
 
-                              // Check if jsonContent is actually an object
-                              if (typeof jsonContent !== 'object' || jsonContent === null) {
-                                console.error("JSON content is not an object:", jsonContent);
-                                return (
-                                  <Card className="overflow-hidden">
-                                    <CardHeader className="bg-muted/40">
-                                      <CardTitle className="text-lg">Project Description</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="pt-6">
-                                      <p className="whitespace-pre-wrap">{content || about}</p>
-                                    </CardContent>
-                                  </Card>
-                                );
-                              }
+              {/* Description Tab Content */}
+              <TabsContent value="description" className="mt-0 p-4">
+                {isLoadingDetails ? <ProjectSkeleton /> : (
+                  <div className="prose dark:prose-invert max-w-none text-sm sm:text-base">
+                    {(() => {
+                      const content = extraDetails.content;
+                      const isLikelyJSON = (str?: string) => str?.trim().startsWith('{') && str?.trim().endsWith('}');
 
-                              // Format timestamps to human-readable dates
-                              const formatTimestamp = (timestamp: number) => {
-                                if (!timestamp) return "N/A";
-                                try {
-                                  return new Date(timestamp * 1000).toLocaleDateString('en-US', {
-                                    year: 'numeric',
-                                    month: 'short',
-                                    day: 'numeric'
-                                  });
-                                } catch (e) {
-                                  return String(timestamp);
-                                }
-                              };
+                      if (!isLikelyJSON(content)) {
+                        // Display as plain text
+                        return (
+                          <Card>
+                            <CardHeader><CardTitle className="text-base sm:text-lg">Description</CardTitle></CardHeader>
+                            <CardContent><p className="whitespace-pre-wrap">{content || about}</p></CardContent>
+                          </Card>
+                        );
+                      }
 
-                              // Group data into categories for better organization
-                              const groups = {
-                                overview: ['nostrPubKey', 'projectIdentifier', 'founderKey', 'founderRecoveryKey'],
-                                dates: ['startDate', 'expiryDate'],
-                                financial: ['targetAmount', 'penaltyDays'],
-                                stages: ['stages'],
-                                seeding: ['projectSeeders']
-                              };
+                      try {
+                        const jsonContent = JSON.parse(content || '{}');
+                        if (typeof jsonContent !== 'object' || jsonContent === null) throw new Error("Parsed content is not an object");
 
-                              return (
-                                <div className="grid gap-6">
-                                  {/* Overview Section */}
-                                  <Card className="overflow-hidden">
-                                    <CardHeader className="bg-muted/40">
-                                      <CardTitle className="text-lg">Project Overview</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="pt-6">
-                                      <div className="grid gap-4 md:grid-cols-2">
-                                        {groups.overview.map(key => {
-                                          if (!jsonContent[key]) return null;
-                                          return (
-                                            <div key={key} className="flex items-start gap-2 overflow-hidden">
-                                              <div className="rounded-md bg-primary/10 p-2">
-                                                <Key className="h-4 w-4 text-primary" />
-                                              </div>
-                                              <div className="min-w-0 flex-1">
-                                                <p className="font-medium capitalize">
-                                                  {key.replace(/([A-Z])/g, ' $1').trim()}
-                                                </p>
-                                                <p className="text-sm text-muted-foreground truncate font-mono">
-                                                  {String(jsonContent[key])}
-                                                </p>
-                                              </div>
-                                            </div>
-                                          );
-                                        })}
+                        const formatTimestamp = (ts: number) => ts ? new Date(ts * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : "N/A";
+
+                        // Render structured JSON data
+                        return (
+                          <div className="grid gap-4">
+                            {/* Overview */}
+                            <Card>
+                              <CardHeader><CardTitle className="text-base sm:text-lg">Overview</CardTitle></CardHeader>
+                              <CardContent className="grid gap-3 md:grid-cols-2 text-xs sm:text-sm">
+                                {['nostrPubKey', 'projectIdentifier', 'founderKey', 'founderRecoveryKey'].map(key => jsonContent[key] && (
+                                  <div key={key} className="flex items-start gap-2 overflow-hidden">
+                                    <Key className="h-4 w-4 text-muted-foreground mt-1 flex-shrink-0" />
+                                    <div className="min-w-0">
+                                      <p className="font-medium capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</p>
+                                      <p className="text-muted-foreground truncate font-mono">{String(jsonContent[key])}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </CardContent>
+                            </Card>
+                            {/* Timeline */}
+                            {(jsonContent.startDate || jsonContent.expiryDate || jsonContent.penaltyDays) && (
+                              <Card>
+                                <CardHeader><CardTitle className="text-base sm:text-lg">Timeline</CardTitle></CardHeader>
+                                <CardContent className="flex flex-col sm:flex-row justify-around items-center gap-4 text-center text-xs sm:text-sm">
+                                  <div className="flex-1">
+                                    <Calendar className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
+                                    <p className="font-medium">Start</p>
+                                    <p className="text-muted-foreground">{formatTimestamp(jsonContent.startDate)}</p>
+                                  </div>
+                                  {jsonContent.penaltyDays && <>
+                                    <div className="h-px sm:h-10 w-full sm:w-px bg-border" />
+                                    <div className="flex-1">
+                                      <Clock className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
+                                      <p className="font-medium">Penalty</p>
+                                      <p className="text-muted-foreground">{jsonContent.penaltyDays} Days</p>
+                                    </div>
+                                  </>}
+                                  {jsonContent.expiryDate && <>
+                                    <div className="h-px sm:h-10 w-full sm:w-px bg-border" />
+                                    <div className="flex-1">
+                                      <Timer className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
+                                      <p className="font-medium">End</p>
+                                      <p className="text-muted-foreground">{formatTimestamp(jsonContent.expiryDate)}</p>
+                                    </div>
+                                  </>}
+                                </CardContent>
+                              </Card>
+                            )}
+                            {/* Stages */}
+                            {jsonContent.stages?.length > 0 && (
+                              <Card>
+                                <CardHeader><CardTitle className="text-base sm:text-lg">Funding Stages</CardTitle></CardHeader>
+                                <CardContent className="space-y-3">
+                                  {jsonContent.stages.map((stage: any, idx: number) => (
+                                    <div key={idx} className="bg-muted/50 p-3 rounded-lg flex justify-between items-center text-xs sm:text-sm">
+                                      <div>
+                                        <p className="font-medium">Stage {idx + 1}</p>
+                                        <p className="text-muted-foreground">{satoshiToBitcoin(stage.amountToRelease)} BTC</p>
                                       </div>
-                                    </CardContent>
-                                  </Card>
-
-                                  {/* Timeline Section */}
-                                  {(jsonContent.startDate || jsonContent.expiryDate || jsonContent.penaltyDays) && (
-                                    <Card>
-                                      <CardHeader className="bg-muted/40">
-                                        <CardTitle className="text-lg">Project Timeline</CardTitle>
-                                      </CardHeader>
-                                      <CardContent className="pt-6">
-                                        <div className="flex justify-between items-center">
-                                          <div className="text-center flex-1">
-                                            <Calendar className="h-8 w-8 mx-auto text-primary/60" />
-                                            <p className="mt-2 font-medium">Start Date</p>
-                                            <p className="text-sm text-muted-foreground">
-                                              {jsonContent.startDate ? formatTimestamp(jsonContent.startDate) : "N/A"}
-                                            </p>
-                                          </div>
-                                          <div className="h-px w-full max-w-[100px] bg-border" />
-                                          <div className="text-center flex-1">
-                                            <Clock className="h-8 w-8 mx-auto text-primary/60" />
-                                            <p className="mt-2 font-medium">Penalty Period</p>
-                                            <p className="text-sm text-muted-foreground">
-                                              {jsonContent.penaltyDays || "N/A"} Days
-                                            </p>
-                                          </div>
-                                          <div className="h-px w-full max-w-[100px] bg-border" />
-                                          <div className="text-center flex-1">
-                                            <Timer className="h-8 w-8 mx-auto text-primary/60" />
-                                            <p className="mt-2 font-medium">End Date</p>
-                                            <p className="text-sm text-muted-foreground">
-                                              {jsonContent.expiryDate ? formatTimestamp(jsonContent.expiryDate) : "N/A"}
-                                            </p>
-                                          </div>
-                                        </div>
-                                      </CardContent>
-                                    </Card>
-                                  )}
-
-                                  {/* Stages Section */}
-                                  {jsonContent.stages && Array.isArray(jsonContent.stages) && jsonContent.stages.length > 0 && (
-                                    <Card>
-                                      <CardHeader className="bg-muted/40">
-                                        <CardTitle className="text-lg">Funding Stages</CardTitle>
-                                      </CardHeader>
-                                      <CardContent className="pt-6">
-                                        <div className="relative">
-                                          <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border" />
-                                          <div className="space-y-6">
-                                            {jsonContent.stages.map((stage: any, idx: number) => {
-                                              if (!stage) return null;
-                                              return (
-                                                <div key={idx} className="relative pl-8">
-                                                  <div className="absolute left-0 w-8 flex items-center justify-center">
-                                                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary border-4 border-background">
-                                                      {idx + 1}
-                                                    </div>
-                                                  </div>
-                                                  <div className="bg-muted rounded-lg p-4">
-                                                    <div className="flex justify-between items-center mb-2">
-                                                      <h4 className="font-medium">Stage {idx + 1}</h4>
-                                                      <Badge variant="outline">
-                                                        {stage.releaseDate ? formatTimestamp(stage.releaseDate) : "N/A"}
-                                                      </Badge>
-                                                    </div>
-                                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                      <CircleDollarSign className="h-4 w-4" />
-                                                      <span>Release Amount: {stage.amountToRelease ? satoshiToBitcoin(stage.amountToRelease) : "0"} BTC</span>
-                                                    </div>
-                                                  </div>
-                                                </div>
-                                              );
-                                            })}
-                                          </div>
-                                        </div>
-                                      </CardContent>
-                                    </Card>
-                                  )}
-
-                                  {/* Project Seeders */}
-                                  {jsonContent.projectSeeders && typeof jsonContent.projectSeeders === 'object' && (
-                                    <Card>
-                                      <CardHeader className="bg-muted/40">
-                                        <CardTitle className="text-lg">Project Seeders</CardTitle>
-                                      </CardHeader>
-                                      <CardContent className="pt-6">
-                                        <div className="space-y-4">
-                                          <div className="flex items-center gap-2">
-                                            <Shield className="h-5 w-5 text-primary/60" />
-                                            <span className="font-medium">Threshold:</span>
-                                            <span>{jsonContent.projectSeeders.threshold || "N/A"}</span>
-                                          </div>
-                                          {jsonContent.projectSeeders.secretHashes && 
-                                           Array.isArray(jsonContent.projectSeeders.secretHashes) && 
-                                           jsonContent.projectSeeders.secretHashes.length > 0 && (
-                                            <div className="space-y-2">
-                                              <p className="font-medium flex items-center gap-2">
-                                                <Key className="h-4 w-4 text-primary/60" />
-                                                Secret Hashes
-                                              </p>
-                                              <div className="grid gap-2 md:grid-cols-2">
-                                                {jsonContent.projectSeeders.secretHashes.map((hash: string, idx: number) => (
-                                                  <div key={idx} className="bg-muted p-2 rounded font-mono text-xs truncate">
-                                                    {hash}
-                                                  </div>
-                                                ))}
-                                              </div>
-                                            </div>
-                                          )}
-                                        </div>
-                                      </CardContent>
-                                    </Card>
-                                  )}
-
-                                  {/* Raw JSON Debug - in development only */}
-                                  {process.env.NODE_ENV !== 'production' && (
-                                    <details className="mt-8">
-                                      <summary className="text-sm text-muted-foreground cursor-pointer hover:text-foreground">
-                                        Debug: Show Raw JSON Data
-                                      </summary>
-                                      <pre className="mt-2 p-4 bg-muted/50 rounded-md overflow-auto text-xs">
-                                        {JSON.stringify(jsonContent, null, 2)}
-                                      </pre>
-                                    </details>
-                                  )}
-                                </div>
-                              );
-                            } catch (e) {
-                              console.error("Error rendering project content:", e);
-                              return (
-                                <Card className="overflow-hidden">
-                                  <CardHeader className="bg-muted/40">
-                                    <CardTitle className="text-lg">Project Description</CardTitle>
-                                  </CardHeader>
-                                  <CardContent className="pt-6">
-                                    <p className="whitespace-pre-wrap">{extraDetails.content || about}</p>
-                                    {process.env.NODE_ENV !== 'production' && (
-                                      <div className="mt-4 p-4 border border-destructive/20 bg-destructive/5 rounded-md">
-                                        <p className="text-destructive text-sm">Error rendering content: {String(e)}</p>
+                                      <Badge variant="outline">{formatTimestamp(stage.releaseDate)}</Badge>
+                                    </div>
+                                  ))}
+                                </CardContent>
+                              </Card>
+                            )}
+                            {/* Seeders */}
+                            {jsonContent.projectSeeders && (
+                              <Card>
+                                <CardHeader><CardTitle className="text-base sm:text-lg">Seeders</CardTitle></CardHeader>
+                                <CardContent className="space-y-3 text-xs sm:text-sm">
+                                  <p><span className="font-medium">Threshold:</span> {jsonContent.projectSeeders.threshold || "N/A"}</p>
+                                  {jsonContent.projectSeeders.secretHashes?.length > 0 && (
+                                    <div>
+                                      <p className="font-medium mb-1">Secret Hashes:</p>
+                                      <div className="grid gap-2 md:grid-cols-2">
+                                        {jsonContent.projectSeeders.secretHashes.map((hash: string, idx: number) => (
+                                          <div key={idx} className="bg-muted p-2 rounded font-mono text-xs truncate">{hash}</div>
+                                        ))}
                                       </div>
-                                    )}
-                                  </CardContent>
-                                </Card>
-                              );
-                            }
-                          })()}
-                        </div>
-                      </>
-                    )}
+                                    </div>
+                                  )}
+                                </CardContent>
+                              </Card>
+                            )}
+                          </div>
+                        );
+                      } catch (error) {
+                        console.error("Failed to parse JSON content:", error);
+                        // Fallback to plain text if parsing fails
+                        return (
+                          <Card>
+                            <CardHeader><CardTitle className="text-base sm:text-lg">Description</CardTitle></CardHeader>
+                            <CardContent>
+                              <p className="whitespace-pre-wrap">{content || about}</p>
+                              {process.env.NODE_ENV !== 'production' && (
+                                <p className="mt-2 text-xs text-yellow-600">Note: Content looked like JSON but failed to parse.</p>
+                              )}
+                            </CardContent>
+                          </Card>
+                        );
+                      }
+                    })()}
                   </div>
                 )}
               </TabsContent>
 
-              {/* Financial Tab */}
-              <TabsContent value="financial" className="mt-4 p-4">
+              {/* Financial Tab Content */}
+              <TabsContent value="financial" className="mt-6 p-4">
                 {financialData && stats ? (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="space-y-6"
-                  >
-                    {/* Funding Progress */}
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4 sm:space-y-6">
                     <Card>
-                      <CardHeader>
-                        <CardTitle className="text-lg">Funding Progress</CardTitle>
-                      </CardHeader>
+                      <CardHeader><CardTitle className="text-base sm:text-lg">Funding Progress</CardTitle></CardHeader>
                       <CardContent>
-                        <div className="space-y-4">
-                          <AnimatedProgress value={financialData.progressPercentage} />
-                          <div className="flex justify-between text-sm">
-                            <span>{satoshiToBitcoin(financialData.currentAmount)} BTC raised</span>
-                            <span className="text-muted-foreground">
-                              Target: {satoshiToBitcoin(financialData.targetAmount)} BTC
-                            </span>
-                          </div>
+                        <AnimatedProgress value={financialData.progressPercentage} colorClass={financialData.progressColor} />
+                        <div className="flex justify-between text-xs sm:text-sm mt-2">
+                          <span>{satoshiToBitcoin(financialData.currentAmount)} BTC raised</span>
+                          <span className="text-muted-foreground">Target: {satoshiToBitcoin(financialData.targetAmount)} BTC</span>
                         </div>
                       </CardContent>
                     </Card>
-
-                    {/* Financial Stats */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div className="bg-muted rounded-lg p-4 flex flex-col">
-                        <span className="text-sm text-muted-foreground">Invested</span>
-                        <span className="text-xl font-bold mt-1">
-                          {satoshiToBitcoin(stats.amountInvested)} BTC
-                        </span>
-                        <span className="text-xs text-muted-foreground mt-1">
-                          From {stats.investorCount} {stats.investorCount === 1 ? 'investor' : 'investors'}
-                        </span>
-                      </div>
-
-                      <div className="bg-muted rounded-lg p-4 flex flex-col">
-                        <span className="text-sm text-muted-foreground">Spent</span>
-                        <span className="text-xl font-bold mt-1">
-                          {satoshiToBitcoin(stats.amountSpentSoFarByFounder)} BTC
-                        </span>
-                        <span className="text-xs text-muted-foreground mt-1">
-                          Used by founder
-                        </span>
-                      </div>
-
-                      <div className="bg-muted rounded-lg p-4 flex flex-col">
-                        <span className="text-sm text-muted-foreground">Penalties</span>
-                        <span className="text-xl font-bold mt-1">
-                          {satoshiToBitcoin(stats.amountInPenalties)} BTC
-                        </span>
-                        <span className="text-xs text-muted-foreground mt-1">
-                          Total: {stats.countInPenalties} {stats.countInPenalties === 1 ? 'penalty' : 'penalties'}
-                        </span>
-                      </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-center sm:text-left">
+                      {[
+                        { label: 'Invested', value: satoshiToBitcoin(stats.amountInvested) + ' BTC', detail: `From ${stats.investorCount} investor${stats.investorCount !== 1 ? 's' : ''}` },
+                        { label: 'Spent by Founder', value: satoshiToBitcoin(stats.amountSpentSoFarByFounder) + ' BTC', detail: `${financialData.spentPercentage}% of invested` },
+                        { label: 'Penalties', value: satoshiToBitcoin(stats.amountInPenalties) + ' BTC', detail: `${stats.countInPenalties} total (${financialData.penaltiesPercentage}% of invested)` }
+                      ].map(item => (
+                        <Card key={item.label} className="p-3 sm:p-4">
+                          <p className="text-xs sm:text-sm text-muted-foreground">{item.label}</p>
+                          <p className="text-lg sm:text-xl font-semibold mt-1">{item.value}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{item.detail}</p>
+                        </Card>
+                      ))}
                     </div>
                   </motion.div>
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No financial data available
-                  </div>
+                  <div className="text-center py-8 text-muted-foreground">No financial data available.</div>
                 )}
               </TabsContent>
 
-              {/* Media Tab */}
-              <TabsContent value="media" className="mt-4 p-4">
-                {/* Debug output */}
-                {/* {process.env.NODE_ENV !== 'production' && (
-                  <div className="mb-4 p-2 bg-yellow-100/10 text-yellow-500 rounded text-xs">
-                    <p>Media debug info:</p>
-                    <pre className="overflow-auto">{JSON.stringify(extraDetails.media, null, 2)}</pre>
-                  </div>
-                )} */}
+              {/* Media Tab Content */}
+              <TabsContent value="media" className="mt-0 p-4">
                 <ProjectMediaGallery media={extraDetails.media} />
               </TabsContent>
 
-              {/* Team Tab */}
-              <TabsContent value="team" className="mt-4 p-4">
-                {isLoadingDetails ? (
-                  <div className="space-y-4">
-                    <Skeleton className="h-8 w-36" />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Skeleton className="h-32" />
-                      <Skeleton className="h-32" />
-                    </div>
-                  </div>
-                ) : (
-                  <ProjectMembers members={extraDetails.members} />
-                )}
+              {/* Team Tab Content */}
+              <TabsContent value="team" className="mt-0 p-4">
+                {isLoadingDetails ? <ProjectSkeleton /> : <ProjectMembers members={extraDetails.members} />}
               </TabsContent>
 
-              {/* FAQ Tab */}
-              <TabsContent value="faq" className="mt-4 p-4">
+              {/* FAQ Tab Content */}
+              <TabsContent value="faq" className="mt-0 p-4">
                 <ProjectFAQ faq={extraDetails.faq} />
               </TabsContent>
             </Tabs>
