@@ -15,7 +15,7 @@ import { Spinner } from '@/shared/components/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { Textarea } from '@/shared/components/ui/textarea';
 import { useToast } from '@/shared/components/ui/use-toast';
-import { ellipsis } from '@/shared/utils';
+import { ellipsis, npubToHex } from '@/shared/utils';
 import { Skeleton } from '@/shared/components/ui/skeleton';
 
 interface BadgeDefinition {
@@ -339,7 +339,7 @@ export const BadgesPage = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <AwardIcon className="w-6 h-6" />
-          Manage Badges (NIP-58)
+          Manage Badges
         </h1>
         <Dialog open={isCreateDefDialogOpen} onOpenChange={setIsCreateDefDialogOpen}>
           <DialogTrigger asChild>
@@ -557,6 +557,4 @@ const BadgeAwardItem = ({ award, perspective, definition }: { award: BadgeAward;
   );
 };
 
-function npubToHex(arg0: string): string {
-    throw new Error('Function not implemented.');
-}
+ 
