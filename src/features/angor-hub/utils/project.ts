@@ -70,3 +70,46 @@ export const getPenaltiesPercentage = (stats?: { amountInPenalties?: number; amo
   if (invested === 0) return 0;
   return Number(((penalties / invested) * 100).toFixed(1));
 };
+
+// New utility functions for better project display
+
+export const getProjectStatus = (details?: { startDate?: number; expiryDate?: number }): 'upcoming' | 'active' | 'completed' => {
+  if (!details) return 'active';
+  
+  const now = Math.floor(Date.now() / 1000);
+  
+  if (details.startDate && now < details.startDate) {
+    return 'upcoming';
+  }
+  
+  if (details.expiryDate && now > details.expiryDate) {
+    return 'completed';
+  }
+  
+  return 'active';
+};
+
+export const getRemainingTime = (timestamp?: number): string => {
+  if (!timestamp) return 'N/A';
+  
+  const now = Math.floor(Date.now() / 1000);
+  if (now >= timestamp) return 'Expired';
+  
+  const secondsRemaining = timestamp - now;
+  const days = Math.floor(secondsRemaining / 86400);
+  const hours = Math.floor((secondsRemaining % 86400) / 3600);
+  
+  if (days > 0) {
+    return `${days} day${days > 1 ? 's' : ''}`;
+  }
+  
+  return `${hours} hour${hours > 1 ? 's' : ''}`;
+};
+
+export const getProgressColor = (percentage: number): string => {
+  if (percentage >= 100) return 'bg-green-500';
+  if (percentage >= 75) return 'bg-emerald-500';
+  if (percentage >= 50) return 'bg-blue-500';
+  if (percentage >= 25) return 'bg-amber-500';
+  return 'bg-red-500';
+};

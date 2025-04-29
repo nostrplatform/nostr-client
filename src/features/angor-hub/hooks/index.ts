@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { IndexedProject, ProjectStats } from '../types';
 import { AngorNostrService } from '../services/nostr';
 
-const INDEXER_URL = 'https://tbtc.indexer.angor.io/';
+const INDEXER_URL = 'https://fulcrum.angor.online/';
 const INITIAL_OFFSET = 0;
 const LIMIT = 10;
 

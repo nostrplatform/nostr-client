@@ -21,6 +21,10 @@ import { ProjectMediaGallery } from '@/features/angor-hub/components/project-med
 import { ProjectFAQ } from '@/features/angor-hub/components/project-faq';
 import { ProjectMembers } from '@/features/angor-hub/components/project-members';
 
+// Import our new components
+import { ProjectDetailCard } from '@/features/angor-hub/components/project-detail-card';
+import { ProjectSocialLinks } from '@/features/angor-hub/components/project-social-links';
+import { getProgressColor, getProjectStatus, getRemainingTime, getSpentPercentage, getPenaltiesPercentage } from '@/features/angor-hub/utils/project';
 
 // Add loading skeleton component
 const ProjectSkeleton = () => (
@@ -147,32 +151,35 @@ export const ProjectPage = () => {
     nip19.npubEncode(project.details.nostrPubKey) :
     undefined;
 
-  // Calculate funding progress
-  const targetAmount = project.details?.targetAmount || 0;
-  const currentAmount = stats ? stats.amountInvested : 0;
-  const progressPercentage = targetAmount > 0 ? Math.min(Math.round((currentAmount / targetAmount) * 100), 100) : 0;
-
-  // Calculate time remaining
-  const calculateTimeRemaining = () => {
-    if (!project.details?.expiryDate) return 'N/A';
-
-    const now = Math.floor(Date.now() / 1000);
-    const expiryTimestamp = project.details.expiryDate;
-
-    if (now >= expiryTimestamp) return 'Expired';
-
-    const secondsRemaining = expiryTimestamp - now;
-    const daysRemaining = Math.floor(secondsRemaining / (60 * 60 * 24));
-
-    if (daysRemaining > 0) {
-      return `${daysRemaining} days`;
-    }
-
-    const hoursRemaining = Math.floor(secondsRemaining / (60 * 60));
-    return `${hoursRemaining} hours`;
+  // Add financial data processing
+  const processFinancialData = () => {
+    if (!stats || !project.details?.targetAmount) return null;
+    
+    const targetAmount = project.details.targetAmount;
+    const currentAmount = stats.amountInvested;
+    const spentAmount = stats.amountSpentSoFarByFounder;
+    const penaltiesAmount = stats.amountInPenalties;
+    
+    const progressPercentage = targetAmount > 0 ? Math.min(Math.round((currentAmount / targetAmount) * 100), 100) : 0;
+    const spentPercentage = getSpentPercentage({ amountSpentSoFarByFounder: spentAmount, amountInvested: currentAmount });
+    const penaltiesPercentage = getPenaltiesPercentage({ amountInPenalties: penaltiesAmount, amountInvested: currentAmount });
+    
+    return {
+      targetAmount,
+      currentAmount,
+      spentAmount,
+      penaltiesAmount,
+      progressPercentage,
+      spentPercentage,
+      penaltiesPercentage,
+      progressColor: getProgressColor(progressPercentage),
+      timeRemaining: getRemainingTime(project.details.expiryDate),
+      status: getProjectStatus(project.details)
+    };
   };
-
-  const timeRemaining = calculateTimeRemaining();
+  
+  const financialData = processFinancialData();
+  const projectStatus = getProjectStatus(project.details);
 
   return (
     <div className="flex flex-col space-y-6 p-4 pb-16">
@@ -189,7 +196,7 @@ export const ProjectPage = () => {
         <div className="relative">
           {/* Banner Image */}
           <div className="relative w-full h-[200px] md:h-[300px] overflow-hidden rounded-t-xl">
-            {picture ? (
+            {banner ? (
               <img
                 src={banner}
                 alt={`${name} banner`}
@@ -213,6 +220,20 @@ export const ProjectPage = () => {
                     {name.substring(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
+                
+                {/* Project Status Badge */}
+                <div className="absolute -bottom-2 left-0 right-0 flex justify-center">
+                  <Badge 
+                    className={`
+                      ${projectStatus === 'active' ? 'bg-green-500' : ''}
+                      ${projectStatus === 'upcoming' ? 'bg-blue-500' : ''}
+                      ${projectStatus === 'completed' ? 'bg-orange-500' : ''}
+                      text-white border-none px-4
+                    `}
+                  >
+                    {projectStatus.charAt(0).toUpperCase() + projectStatus.slice(1)}
+                  </Badge>
+                </div>
               </div>
 
               {/* Project Info */}
@@ -248,16 +269,15 @@ export const ProjectPage = () => {
                   transition={{ duration: 0.5, delay: 0.2 }}
                   className="flex flex-wrap items-center gap-3"
                 >
-                  
-                    <Button
-                      variant="ghost"
-                      size="lg"
-                      className="relative group hover:bg-muted/50"
-                      onClick={() => window.open(`https://test.angor.io/view/${projectId}`, '_blank')}
-                    >
-                      <ExternalLink className="h-5 w-5 mr-2 transition-transform group-hover:scale-110" />
-                      <span>Invest Now</span>
-                    </Button>
+                  <Button
+                    variant="default"
+                    size="lg"
+                    className="relative group"
+                    onClick={() => window.open(`https://test.angor.io/view/${projectId}`, '_blank')}
+                  >
+                    <ExternalLink className="h-5 w-5 mr-2 transition-transform group-hover:scale-110" />
+                    <span>Invest Now</span>
+                  </Button>
                   
                   {website && (
                     <Button
@@ -294,399 +314,490 @@ export const ProjectPage = () => {
                     </Button>
                   )}
                 </motion.div>
-
-
               </div>
             </div>
           </div>
         </div>
 
         {/* Funding Progress Bar */}
-        {stats && targetAmount > 0 && (
+        {financialData && (
           <div className="px-4 md:px-8 pb-6">
             <div className="bg-muted rounded-lg p-4">
               <div className="flex justify-between text-sm mb-2">
-                <span className="font-medium">{satoshiToBitcoin(currentAmount)} BTC raised</span>
-                <span className="text-muted-foreground">Target: {satoshiToBitcoin(targetAmount)} BTC</span>
+                <span className="font-medium">{satoshiToBitcoin(financialData.currentAmount)} BTC raised</span>
+                <span className="text-muted-foreground">Target: {satoshiToBitcoin(financialData.targetAmount)} BTC</span>
               </div>
-              <Progress value={progressPercentage} className="h-2" />
+              <div className="h-2 w-full bg-muted-foreground/20 rounded-full overflow-hidden">
+                <motion.div
+                  className={`h-full ${financialData.progressColor}`}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${financialData.progressPercentage}%` }}
+                  transition={{ duration: 1, ease: "easeOut" }}
+                />
+              </div>
               <div className="flex justify-between text-sm mt-2">
-                <span className="text-primary font-medium">{progressPercentage}% Complete</span>
-                <span className="text-muted-foreground">{timeRemaining} left</span>
+                <span className="text-primary font-medium">{financialData.progressPercentage}% Complete</span>
+                <span className="text-muted-foreground">{financialData.timeRemaining} left</span>
               </div>
             </div>
           </div>
         )}
-
       </Card>
 
-      {/* Content area */}
-      <div className="grid grid-cols-1 gap-6">
-        <Card>
-          <Tabs defaultValue="description" className="w-full p-1">
-            <TabsList className="w-full grid grid-cols-5">
-              <TabsTrigger value="description">Description</TabsTrigger>
-              <TabsTrigger value="financial">Financial</TabsTrigger>
-              <TabsTrigger value="media">Media</TabsTrigger>
-              <TabsTrigger value="team">Team</TabsTrigger>
-              <TabsTrigger value="faq">FAQ</TabsTrigger>
-            </TabsList>
+      {/* Content area with updated layout */}
+      <div className="grid grid-cols-1 md:grid-cols-1 ">
+        {/* Left column: Project details */}
+        <div className="space-y-6">
+          {/* Project details card */}
+          <ProjectDetailCard 
+            project={project}
+            stats={stats ?? undefined}
+            onVisitWebsite={() => {
+              if (website) {
+                window.open(website.startsWith('http') ? website : `https://${website}`, '_blank');
+              }
+            }}
+          />
+          
+          {/* Social links card */}
+          <ProjectSocialLinks externalIdentities={project.externalIdentities} />
+        </div>
+        
+        {/* Right column: Tabs for detailed content */}
+        <div className="md:col-span-2 mt-6">
+          <Card>
+            <Tabs defaultValue="description" className="w-full p-1">
+              <TabsList className="w-full grid grid-cols-5">
+                <TabsTrigger value="description">Description</TabsTrigger>
+                <TabsTrigger value="financial">Financial</TabsTrigger>
+                <TabsTrigger value="media">Media</TabsTrigger>
+                <TabsTrigger value="team">Team</TabsTrigger>
+                <TabsTrigger value="faq">FAQ</TabsTrigger>
+              </TabsList>
 
-            {/* Description Tab */}
-            <TabsContent value="description" className="mt-4 p-4">
-              {isLoadingDetails ? (
-                <ProjectSkeleton />
-              ) : (
-                <div className="space-y-4">
-                  {isLoadingDetails ? (
-                    <div className="flex justify-center py-8">
-                      <Spinner />
-                    </div>
-                  ) : (
-                    <>
-                      <div className="prose dark:prose-invert max-w-none">
-                        {(() => {
-                          try {
-                            // Safely parse JSON content with better error handling
-                            interface ProjectContent {
-                              nostrPubKey?: string;
-                              projectIdentifier?: string;
-                              founderKey?: string;
-                              founderRecoveryKey?: string;
-                              startDate?: number;
-                              expiryDate?: number;
-                              targetAmount?: number;
-                              penaltyDays?: number;
-                              stages?: Array<{
-                                releaseDate: number;
-                                amountToRelease: number;
-                              }>;
-                              projectSeeders?: {
-                                threshold: number;
-                                secretHashes: string[];
+              {/* Description Tab */}
+              <TabsContent value="description" className="mt-4 p-4">
+                {isLoadingDetails ? (
+                  <ProjectSkeleton />
+                ) : (
+                  <div className="space-y-4">
+                    {isLoadingDetails ? (
+                      <div className="flex justify-center py-8">
+                        <Spinner />
+                      </div>
+                    ) : (
+                      <>
+                        <div className="prose dark:prose-invert max-w-none">
+                          {(() => {
+                            try {
+                              // First check if the content appears to be JSON
+                              const isLikelyJSON = (str?: string) => {
+                                if (!str) return false;
+                                const trimmed = str.trim();
+                                return (trimmed.startsWith('{') && trimmed.endsWith('}')) || 
+                                       (trimmed.startsWith('[') && trimmed.endsWith(']'));
                               };
-                              [key: string]: any; // Allow additional string keys
-                            }
-                            
-                            let jsonContent: ProjectContent = {};
-                            if (extraDetails.content) {
-                              try {
-                                jsonContent = JSON.parse(extraDetails.content) as ProjectContent;
-                                console.log("Parsed JSON content successfully:", jsonContent);
-                              } catch (error) {
-                                console.error("Failed to parse JSON content:", error);
-                                // Return the raw content if parsing fails
-                                return <p className="whitespace-pre-wrap">{extraDetails.content || about}</p>;
-                              }
-                            } else {
-                              // If no extraDetails.content, just show the about info
-                              return <p className="whitespace-pre-wrap">{about}</p>;
-                            }
-
-                            // Check if jsonContent is actually an object
-                            if (typeof jsonContent !== 'object' || jsonContent === null) {
-                              console.error("JSON content is not an object:", jsonContent);
-                              return <p className="whitespace-pre-wrap">{extraDetails.content || about}</p>;
-                            }
-
-                            // Format timestamps to human-readable dates
-                            const formatTimestamp = (timestamp: number) => {
-                              if (!timestamp) return "N/A";
-                              try {
-                                return new Date(timestamp * 1000).toLocaleDateString('en-US', {
-                                  year: 'numeric',
-                                  month: 'short',
-                                  day: 'numeric'
-                                });
-                              } catch (e) {
-                                return String(timestamp);
-                              }
-                            };
-
-                            // Group data into categories for better organization
-                            const groups = {
-                              overview: ['nostrPubKey', 'projectIdentifier', 'founderKey', 'founderRecoveryKey'],
-                              dates: ['startDate', 'expiryDate'],
-                              financial: ['targetAmount', 'penaltyDays'],
-                              stages: ['stages'],
-                              seeding: ['projectSeeders']
-                            };
-
-                            return (
-                              <div className="grid gap-6">
-                                {/* Overview Section */}
-                                <Card className="overflow-hidden">
-                                  <CardHeader className="bg-muted/40">
-                                    <CardTitle className="text-lg">Project Overview</CardTitle>
-                                  </CardHeader>
-                                  <CardContent className="pt-6">
-                                    <div className="grid gap-4 md:grid-cols-2">
-                                      {groups.overview.map(key => {
-                                        if (!jsonContent[key]) return null;
-                                        return (
-                                          <div key={key} className="flex items-start gap-2 overflow-hidden">
-                                            <div className="rounded-md bg-primary/10 p-2">
-                                              <Key className="h-4 w-4 text-primary" />
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                              <p className="font-medium capitalize">
-                                                {key.replace(/([A-Z])/g, ' $1').trim()}
-                                              </p>
-                                              <p className="text-sm text-muted-foreground truncate font-mono">
-                                                {String(jsonContent[key])}
-                                              </p>
-                                            </div>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  </CardContent>
-                                </Card>
-
-                                {/* Timeline Section */}
-                                {(jsonContent.startDate || jsonContent.expiryDate || jsonContent.penaltyDays) && (
-                                  <Card>
+                              
+                              // Check if content looks like JSON before attempting to parse
+                              const content = extraDetails.content;
+                              const shouldParseAsJSON = isLikelyJSON(content);
+                              
+                              // If it doesn't look like JSON, just display it as text
+                              if (!shouldParseAsJSON) {
+                                console.log("Content doesn't appear to be JSON, displaying as text");
+                                return (
+                                  <Card className="overflow-hidden">
                                     <CardHeader className="bg-muted/40">
-                                      <CardTitle className="text-lg">Project Timeline</CardTitle>
+                                      <CardTitle className="text-lg">Project Description</CardTitle>
                                     </CardHeader>
                                     <CardContent className="pt-6">
-                                      <div className="flex justify-between items-center">
-                                        <div className="text-center flex-1">
-                                          <Calendar className="h-8 w-8 mx-auto text-primary/60" />
-                                          <p className="mt-2 font-medium">Start Date</p>
-                                          <p className="text-sm text-muted-foreground">
-                                            {jsonContent.startDate ? formatTimestamp(jsonContent.startDate) : "N/A"}
-                                          </p>
-                                        </div>
-                                        <div className="h-px w-full max-w-[100px] bg-border" />
-                                        <div className="text-center flex-1">
-                                          <Clock className="h-8 w-8 mx-auto text-primary/60" />
-                                          <p className="mt-2 font-medium">Penalty Period</p>
-                                          <p className="text-sm text-muted-foreground">
-                                            {jsonContent.penaltyDays || "N/A"} Days
-                                          </p>
-                                        </div>
-                                        <div className="h-px w-full max-w-[100px] bg-border" />
-                                        <div className="text-center flex-1">
-                                          <Timer className="h-8 w-8 mx-auto text-primary/60" />
-                                          <p className="mt-2 font-medium">End Date</p>
-                                          <p className="text-sm text-muted-foreground">
-                                            {jsonContent.expiryDate ? formatTimestamp(jsonContent.expiryDate) : "N/A"}
-                                          </p>
-                                        </div>
-                                      </div>
+                                      <p className="whitespace-pre-wrap">{content || about}</p>
                                     </CardContent>
                                   </Card>
-                                )}
-
-                                {/* Stages Section */}
-                                {jsonContent.stages && Array.isArray(jsonContent.stages) && jsonContent.stages.length > 0 && (
-                                  <Card>
-                                    <CardHeader className="bg-muted/40">
-                                      <CardTitle className="text-lg">Funding Stages</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="pt-6">
-                                      <div className="relative">
-                                        <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border" />
-                                        <div className="space-y-6">
-                                          {jsonContent.stages.map((stage: any, idx: number) => {
-                                            if (!stage) return null;
-                                            return (
-                                              <div key={idx} className="relative pl-8">
-                                                <div className="absolute left-0 w-8 flex items-center justify-center">
-                                                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary border-4 border-background">
-                                                    {idx + 1}
-                                                  </div>
-                                                </div>
-                                                <div className="bg-muted rounded-lg p-4">
-                                                  <div className="flex justify-between items-center mb-2">
-                                                    <h4 className="font-medium">Stage {idx + 1}</h4>
-                                                    <Badge variant="outline">
-                                                      {stage.releaseDate ? formatTimestamp(stage.releaseDate) : "N/A"}
-                                                    </Badge>
-                                                  </div>
-                                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                    <CircleDollarSign className="h-4 w-4" />
-                                                    <span>Release Amount: {stage.amountToRelease ? satoshiToBitcoin(stage.amountToRelease) : "0"} BTC</span>
-                                                  </div>
-                                                </div>
-                                              </div>
-                                            );
-                                          })}
-                                        </div>
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                )}
-
-                                {/* Project Seeders */}
-                                {jsonContent.projectSeeders && typeof jsonContent.projectSeeders === 'object' && (
-                                  <Card>
-                                    <CardHeader className="bg-muted/40">
-                                      <CardTitle className="text-lg">Project Seeders</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="pt-6">
-                                      <div className="space-y-4">
-                                        <div className="flex items-center gap-2">
-                                          <Shield className="h-5 w-5 text-primary/60" />
-                                          <span className="font-medium">Threshold:</span>
-                                          <span>{jsonContent.projectSeeders.threshold || "N/A"}</span>
-                                        </div>
-                                        {jsonContent.projectSeeders.secretHashes && 
-                                         Array.isArray(jsonContent.projectSeeders.secretHashes) && 
-                                         jsonContent.projectSeeders.secretHashes.length > 0 && (
-                                          <div className="space-y-2">
-                                            <p className="font-medium flex items-center gap-2">
-                                              <Key className="h-4 w-4 text-primary/60" />
-                                              Secret Hashes
+                                );
+                              }
+                              
+                              // Safely parse JSON content with better error handling
+                              interface ProjectContent {
+                                nostrPubKey?: string;
+                                projectIdentifier?: string;
+                                founderKey?: string;
+                                founderRecoveryKey?: string;
+                                startDate?: number;
+                                expiryDate?: number;
+                                targetAmount?: number;
+                                penaltyDays?: number;
+                                stages?: Array<{
+                                  releaseDate: number;
+                                  amountToRelease: number;
+                                }>;
+                                projectSeeders?: {
+                                  threshold: number;
+                                  secretHashes: string[];
+                                };
+                                [key: string]: any; // Allow additional string keys
+                              }
+                              
+                              let jsonContent: ProjectContent = {};
+                              if (content) {
+                                try {
+                                  jsonContent = JSON.parse(content) as ProjectContent;
+                                  console.log("Parsed JSON content successfully:", jsonContent);
+                                } catch (error) {
+                                  console.error("Failed to parse JSON content:", error);
+                                  // Return the raw content if parsing fails
+                                  return (
+                                    <Card className="overflow-hidden">
+                                      <CardHeader className="bg-muted/40">
+                                        <CardTitle className="text-lg">Project Description</CardTitle>
+                                      </CardHeader>
+                                      <CardContent className="pt-6">
+                                        <p className="whitespace-pre-wrap">{content || about}</p>
+                                        {process.env.NODE_ENV !== 'production' && (
+                                          <div className="mt-4 p-4 border border-yellow-500/20 bg-yellow-500/5 rounded-md">
+                                            <p className="text-yellow-500 text-sm">
+                                              Note: Content appears to be JSON format but couldn't be parsed. 
+                                              Displaying as raw text.
                                             </p>
-                                            <div className="grid gap-2 md:grid-cols-2">
-                                              {jsonContent.projectSeeders.secretHashes.map((hash: string, idx: number) => (
-                                                <div key={idx} className="bg-muted p-2 rounded font-mono text-xs truncate">
-                                                  {hash}
-                                                </div>
-                                              ))}
-                                            </div>
                                           </div>
                                         )}
+                                      </CardContent>
+                                    </Card>
+                                  );
+                                }
+                              } else {
+                                // If no extraDetails.content, just show the about info
+                                return (
+                                  <Card className="overflow-hidden">
+                                    <CardHeader className="bg-muted/40">
+                                      <CardTitle className="text-lg">Project Description</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="pt-6">
+                                      <p className="whitespace-pre-wrap">{about}</p>
+                                    </CardContent>
+                                  </Card>
+                                );
+                              }
+
+                              // Check if jsonContent is actually an object
+                              if (typeof jsonContent !== 'object' || jsonContent === null) {
+                                console.error("JSON content is not an object:", jsonContent);
+                                return (
+                                  <Card className="overflow-hidden">
+                                    <CardHeader className="bg-muted/40">
+                                      <CardTitle className="text-lg">Project Description</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="pt-6">
+                                      <p className="whitespace-pre-wrap">{content || about}</p>
+                                    </CardContent>
+                                  </Card>
+                                );
+                              }
+
+                              // Format timestamps to human-readable dates
+                              const formatTimestamp = (timestamp: number) => {
+                                if (!timestamp) return "N/A";
+                                try {
+                                  return new Date(timestamp * 1000).toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric'
+                                  });
+                                } catch (e) {
+                                  return String(timestamp);
+                                }
+                              };
+
+                              // Group data into categories for better organization
+                              const groups = {
+                                overview: ['nostrPubKey', 'projectIdentifier', 'founderKey', 'founderRecoveryKey'],
+                                dates: ['startDate', 'expiryDate'],
+                                financial: ['targetAmount', 'penaltyDays'],
+                                stages: ['stages'],
+                                seeding: ['projectSeeders']
+                              };
+
+                              return (
+                                <div className="grid gap-6">
+                                  {/* Overview Section */}
+                                  <Card className="overflow-hidden">
+                                    <CardHeader className="bg-muted/40">
+                                      <CardTitle className="text-lg">Project Overview</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="pt-6">
+                                      <div className="grid gap-4 md:grid-cols-2">
+                                        {groups.overview.map(key => {
+                                          if (!jsonContent[key]) return null;
+                                          return (
+                                            <div key={key} className="flex items-start gap-2 overflow-hidden">
+                                              <div className="rounded-md bg-primary/10 p-2">
+                                                <Key className="h-4 w-4 text-primary" />
+                                              </div>
+                                              <div className="min-w-0 flex-1">
+                                                <p className="font-medium capitalize">
+                                                  {key.replace(/([A-Z])/g, ' $1').trim()}
+                                                </p>
+                                                <p className="text-sm text-muted-foreground truncate font-mono">
+                                                  {String(jsonContent[key])}
+                                                </p>
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
                                       </div>
                                     </CardContent>
                                   </Card>
-                                )}
 
-                                {/* Raw JSON Debug - in development only */}
-                                {process.env.NODE_ENV !== 'production' && (
-                                  <details className="mt-8">
-                                    <summary className="text-sm text-muted-foreground cursor-pointer hover:text-foreground">
-                                      Debug: Show Raw JSON Data
-                                    </summary>
-                                    <pre className="mt-2 p-4 bg-muted/50 rounded-md overflow-auto text-xs">
-                                      {JSON.stringify(jsonContent, null, 2)}
-                                    </pre>
-                                  </details>
-                                )}
-                              </div>
-                            );
-                          } catch (e) {
-                            console.error("Error rendering project content:", e);
-                            return (
-                              <div>
-                                <p className="whitespace-pre-wrap">{extraDetails.content || about}</p>
-                                {process.env.NODE_ENV !== 'production' && (
-                                  <div className="mt-4 p-4 border border-destructive/20 bg-destructive/5 rounded-md">
-                                    <p className="text-destructive text-sm">Error parsing content: {String(e)}</p>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          }
-                        })()}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-            </TabsContent>
+                                  {/* Timeline Section */}
+                                  {(jsonContent.startDate || jsonContent.expiryDate || jsonContent.penaltyDays) && (
+                                    <Card>
+                                      <CardHeader className="bg-muted/40">
+                                        <CardTitle className="text-lg">Project Timeline</CardTitle>
+                                      </CardHeader>
+                                      <CardContent className="pt-6">
+                                        <div className="flex justify-between items-center">
+                                          <div className="text-center flex-1">
+                                            <Calendar className="h-8 w-8 mx-auto text-primary/60" />
+                                            <p className="mt-2 font-medium">Start Date</p>
+                                            <p className="text-sm text-muted-foreground">
+                                              {jsonContent.startDate ? formatTimestamp(jsonContent.startDate) : "N/A"}
+                                            </p>
+                                          </div>
+                                          <div className="h-px w-full max-w-[100px] bg-border" />
+                                          <div className="text-center flex-1">
+                                            <Clock className="h-8 w-8 mx-auto text-primary/60" />
+                                            <p className="mt-2 font-medium">Penalty Period</p>
+                                            <p className="text-sm text-muted-foreground">
+                                              {jsonContent.penaltyDays || "N/A"} Days
+                                            </p>
+                                          </div>
+                                          <div className="h-px w-full max-w-[100px] bg-border" />
+                                          <div className="text-center flex-1">
+                                            <Timer className="h-8 w-8 mx-auto text-primary/60" />
+                                            <p className="mt-2 font-medium">End Date</p>
+                                            <p className="text-sm text-muted-foreground">
+                                              {jsonContent.expiryDate ? formatTimestamp(jsonContent.expiryDate) : "N/A"}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  )}
 
-            {/* Financial Tab */}
-            <TabsContent value="financial" className="mt-4 p-4">
-              {stats && (stats.amountSpentSoFarByFounder > 0 || stats.amountInPenalties > 0) ? (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-6"
-                >
-                  {/* Funding Progress */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Funding Progress</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <AnimatedProgress value={progressPercentage} />
-                        <div className="flex justify-between text-sm">
-                          <span>{satoshiToBitcoin(currentAmount)} BTC raised</span>
-                          <span className="text-muted-foreground">
-                            Target: {satoshiToBitcoin(targetAmount)} BTC
-                          </span>
+                                  {/* Stages Section */}
+                                  {jsonContent.stages && Array.isArray(jsonContent.stages) && jsonContent.stages.length > 0 && (
+                                    <Card>
+                                      <CardHeader className="bg-muted/40">
+                                        <CardTitle className="text-lg">Funding Stages</CardTitle>
+                                      </CardHeader>
+                                      <CardContent className="pt-6">
+                                        <div className="relative">
+                                          <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border" />
+                                          <div className="space-y-6">
+                                            {jsonContent.stages.map((stage: any, idx: number) => {
+                                              if (!stage) return null;
+                                              return (
+                                                <div key={idx} className="relative pl-8">
+                                                  <div className="absolute left-0 w-8 flex items-center justify-center">
+                                                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary border-4 border-background">
+                                                      {idx + 1}
+                                                    </div>
+                                                  </div>
+                                                  <div className="bg-muted rounded-lg p-4">
+                                                    <div className="flex justify-between items-center mb-2">
+                                                      <h4 className="font-medium">Stage {idx + 1}</h4>
+                                                      <Badge variant="outline">
+                                                        {stage.releaseDate ? formatTimestamp(stage.releaseDate) : "N/A"}
+                                                      </Badge>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                      <CircleDollarSign className="h-4 w-4" />
+                                                      <span>Release Amount: {stage.amountToRelease ? satoshiToBitcoin(stage.amountToRelease) : "0"} BTC</span>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  )}
+
+                                  {/* Project Seeders */}
+                                  {jsonContent.projectSeeders && typeof jsonContent.projectSeeders === 'object' && (
+                                    <Card>
+                                      <CardHeader className="bg-muted/40">
+                                        <CardTitle className="text-lg">Project Seeders</CardTitle>
+                                      </CardHeader>
+                                      <CardContent className="pt-6">
+                                        <div className="space-y-4">
+                                          <div className="flex items-center gap-2">
+                                            <Shield className="h-5 w-5 text-primary/60" />
+                                            <span className="font-medium">Threshold:</span>
+                                            <span>{jsonContent.projectSeeders.threshold || "N/A"}</span>
+                                          </div>
+                                          {jsonContent.projectSeeders.secretHashes && 
+                                           Array.isArray(jsonContent.projectSeeders.secretHashes) && 
+                                           jsonContent.projectSeeders.secretHashes.length > 0 && (
+                                            <div className="space-y-2">
+                                              <p className="font-medium flex items-center gap-2">
+                                                <Key className="h-4 w-4 text-primary/60" />
+                                                Secret Hashes
+                                              </p>
+                                              <div className="grid gap-2 md:grid-cols-2">
+                                                {jsonContent.projectSeeders.secretHashes.map((hash: string, idx: number) => (
+                                                  <div key={idx} className="bg-muted p-2 rounded font-mono text-xs truncate">
+                                                    {hash}
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  )}
+
+                                  {/* Raw JSON Debug - in development only */}
+                                  {process.env.NODE_ENV !== 'production' && (
+                                    <details className="mt-8">
+                                      <summary className="text-sm text-muted-foreground cursor-pointer hover:text-foreground">
+                                        Debug: Show Raw JSON Data
+                                      </summary>
+                                      <pre className="mt-2 p-4 bg-muted/50 rounded-md overflow-auto text-xs">
+                                        {JSON.stringify(jsonContent, null, 2)}
+                                      </pre>
+                                    </details>
+                                  )}
+                                </div>
+                              );
+                            } catch (e) {
+                              console.error("Error rendering project content:", e);
+                              return (
+                                <Card className="overflow-hidden">
+                                  <CardHeader className="bg-muted/40">
+                                    <CardTitle className="text-lg">Project Description</CardTitle>
+                                  </CardHeader>
+                                  <CardContent className="pt-6">
+                                    <p className="whitespace-pre-wrap">{extraDetails.content || about}</p>
+                                    {process.env.NODE_ENV !== 'production' && (
+                                      <div className="mt-4 p-4 border border-destructive/20 bg-destructive/5 rounded-md">
+                                        <p className="text-destructive text-sm">Error rendering content: {String(e)}</p>
+                                      </div>
+                                    )}
+                                  </CardContent>
+                                </Card>
+                              );
+                            }
+                          })()}
                         </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Financial Tab */}
+              <TabsContent value="financial" className="mt-4 p-4">
+                {financialData && stats ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-6"
+                  >
+                    {/* Funding Progress */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Funding Progress</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <AnimatedProgress value={financialData.progressPercentage} />
+                          <div className="flex justify-between text-sm">
+                            <span>{satoshiToBitcoin(financialData.currentAmount)} BTC raised</span>
+                            <span className="text-muted-foreground">
+                              Target: {satoshiToBitcoin(financialData.targetAmount)} BTC
+                            </span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Financial Stats */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="bg-muted rounded-lg p-4 flex flex-col">
+                        <span className="text-sm text-muted-foreground">Invested</span>
+                        <span className="text-xl font-bold mt-1">
+                          {satoshiToBitcoin(stats.amountInvested)} BTC
+                        </span>
+                        <span className="text-xs text-muted-foreground mt-1">
+                          From {stats.investorCount} {stats.investorCount === 1 ? 'investor' : 'investors'}
+                        </span>
                       </div>
-                    </CardContent>
-                  </Card>
 
-                  {/* Financial Stats */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="bg-muted rounded-lg p-4 flex flex-col">
-                      <span className="text-sm text-muted-foreground">Invested</span>
-                      <span className="text-xl font-bold mt-1">
-                        {satoshiToBitcoin(stats.amountInvested)} BTC
-                      </span>
-                      <span className="text-xs text-muted-foreground mt-1">
-                        From {stats.investorCount} {stats.investorCount === 1 ? 'investor' : 'investors'}
-                      </span>
+                      <div className="bg-muted rounded-lg p-4 flex flex-col">
+                        <span className="text-sm text-muted-foreground">Spent</span>
+                        <span className="text-xl font-bold mt-1">
+                          {satoshiToBitcoin(stats.amountSpentSoFarByFounder)} BTC
+                        </span>
+                        <span className="text-xs text-muted-foreground mt-1">
+                          Used by founder
+                        </span>
+                      </div>
+
+                      <div className="bg-muted rounded-lg p-4 flex flex-col">
+                        <span className="text-sm text-muted-foreground">Penalties</span>
+                        <span className="text-xl font-bold mt-1">
+                          {satoshiToBitcoin(stats.amountInPenalties)} BTC
+                        </span>
+                        <span className="text-xs text-muted-foreground mt-1">
+                          Total: {stats.countInPenalties} {stats.countInPenalties === 1 ? 'penalty' : 'penalties'}
+                        </span>
+                      </div>
                     </div>
+                  </motion.div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No financial data available
+                  </div>
+                )}
+              </TabsContent>
 
-                    <div className="bg-muted rounded-lg p-4 flex flex-col">
-                      <span className="text-sm text-muted-foreground">Spent</span>
-                      <span className="text-xl font-bold mt-1">
-                        {satoshiToBitcoin(stats.amountSpentSoFarByFounder)} BTC
-                      </span>
-                      <span className="text-xs text-muted-foreground mt-1">
-                        Used by founder
-                      </span>
-                    </div>
+              {/* Media Tab */}
+              <TabsContent value="media" className="mt-4 p-4">
+                {/* Debug output */}
+                {/* {process.env.NODE_ENV !== 'production' && (
+                  <div className="mb-4 p-2 bg-yellow-100/10 text-yellow-500 rounded text-xs">
+                    <p>Media debug info:</p>
+                    <pre className="overflow-auto">{JSON.stringify(extraDetails.media, null, 2)}</pre>
+                  </div>
+                )} */}
+                <ProjectMediaGallery media={extraDetails.media} />
+              </TabsContent>
 
-                    <div className="bg-muted rounded-lg p-4 flex flex-col">
-                      <span className="text-sm text-muted-foreground">Penalties</span>
-                      <span className="text-xl font-bold mt-1">
-                        {satoshiToBitcoin(stats.amountInPenalties)} BTC
-                      </span>
-                      <span className="text-xs text-muted-foreground mt-1">
-                        Total: {stats.countInPenalties} {stats.countInPenalties === 1 ? 'penalty' : 'penalties'}
-                      </span>
+              {/* Team Tab */}
+              <TabsContent value="team" className="mt-4 p-4">
+                {isLoadingDetails ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-8 w-36" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Skeleton className="h-32" />
+                      <Skeleton className="h-32" />
                     </div>
                   </div>
-                </motion.div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  No financial data available
-                </div>
-              )}
-            </TabsContent>
+                ) : (
+                  <ProjectMembers members={extraDetails.members} />
+                )}
+              </TabsContent>
 
-            {/* Media Tab */}
-            <TabsContent value="media" className="mt-4 p-4">
-              {/* Debug output */}
-              {/* {process.env.NODE_ENV !== 'production' && (
-                <div className="mb-4 p-2 bg-yellow-100/10 text-yellow-500 rounded text-xs">
-                  <p>Media debug info:</p>
-                  <pre className="overflow-auto">{JSON.stringify(extraDetails.media, null, 2)}</pre>
-                </div>
-              )} */}
-              <ProjectMediaGallery media={extraDetails.media} />
-            </TabsContent>
-
-            {/* Team Tab */}
-            <TabsContent value="team" className="mt-4 p-4">
-              {isLoadingDetails ? (
-                <div className="space-y-4">
-                  <Skeleton className="h-8 w-36" />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Skeleton className="h-32" />
-                    <Skeleton className="h-32" />
-                  </div>
-                </div>
-              ) : (
-                <ProjectMembers members={extraDetails.members} />
-              )}
-            </TabsContent>
-
-            {/* FAQ Tab */}
-            <TabsContent value="faq" className="mt-4 p-4">
-              <ProjectFAQ faq={extraDetails.faq} />
-            </TabsContent>
-          </Tabs>
-        </Card>
+              {/* FAQ Tab */}
+              <TabsContent value="faq" className="mt-4 p-4">
+                <ProjectFAQ faq={extraDetails.faq} />
+              </TabsContent>
+            </Tabs>
+          </Card>
+        </div>
       </div>
     </div>
   );

@@ -2,7 +2,7 @@ import NDK, { NDKEvent, NDKKind, NDKFilter, NDKUserProfile, NDKSubscription } fr
 import { ProjectUpdate, NostrProjectData, ProjectStats } from '../types';
 import { nip19 } from 'nostr-tools';
 
-const INDEXER_URL = 'https://tbtc.indexer.angor.io/';
+const INDEXER_URL = 'https://fulcrum.angor.online/';
 
 // Default relay URLs for Angor & general Nostr communication
 const RELAY_URLS = [
