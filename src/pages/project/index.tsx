@@ -23,6 +23,8 @@ import { ProjectFAQ } from '@/features/angor-hub/components/project-faq';
 import { ProjectMembers } from '@/features/angor-hub/components/project-members';
 import { ProjectDetailCard } from '@/features/angor-hub/components/project-detail-card';
 import { ProjectSocialLinks } from '@/features/angor-hub/components/project-social-links';
+// Import SmartText
+import { SmartText } from '@/features/angor-hub/components/smart-text';
 
 // Utils
 import { satoshiToBitcoin } from '@/shared/utils/bitcoin';
@@ -220,28 +222,31 @@ export const ProjectPage = () => {
             </div>
 
             {/* Project Info & Actions */}
-            <div className="flex-1 flex flex-col md:flex-row justify-between items-center md:items-end gap-4 w-full mt-2 md:mt-0">
+            <div className=" gap-4 md:gap-6">
               <div className="text-center md:text-left space-y-1">
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight line-clamp-2 break-words">
                   {name}
                 </h1>
-                <DescriptionText text={about} />
+                {/* Use SmartText for about */}
+                <div className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                   <SmartText text={about} />
+                </div>
                 {nip05 && (
                   <Badge variant="outline" className="text-xs truncate max-w-full">
                     {nip05}
                   </Badge>
                 )}
               </div>
-              {/* Action Buttons */}
+              {/* Action Buttons - Remove Invest and Profile, keep others */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
-                className="flex flex-wrap items-center justify-center md:justify-end gap-2 flex-shrink-0"
+                className="flex flex-wrap items-center justify-center md:justify-end gap-2 flex-shrink-0 mt-6"
               >
-                <Button
+                <Button variant="outline"
                   size="sm"
-                  onClick={() => window.open(`https://test.angor.io/view/${projectId}`, '_blank')}
+                  onClick={() => window.open(`https://beta.angor.io/view/${projectId}`, '_blank')}
                   aria-label="Invest Now"
                 >
                   <ExternalLink className="h-4 w-4 mr-2" /> Invest
@@ -320,13 +325,10 @@ export const ProjectPage = () => {
                       const isLikelyJSON = (str?: string) => str?.trim().startsWith('{') && str?.trim().endsWith('}');
 
                       if (!isLikelyJSON(content)) {
-                        // Display as plain text
+                        // Display as plain text - Use SmartText here too if desired
                         return (
-                          <Card>
-                            <CardHeader><CardTitle className="text-base sm:text-lg">Description</CardTitle></CardHeader>
-                            <CardContent><p className="whitespace-pre-wrap">{content || about}</p></CardContent>
-                          </Card>
-                        );
+                              <CardContent><p className="whitespace-pre-wrap"><SmartText text={content || about} /></p></CardContent>
+                         );
                       }
 
                       try {
@@ -422,12 +424,12 @@ export const ProjectPage = () => {
                         );
                       } catch (error) {
                         console.error("Failed to parse JSON content:", error);
-                        // Fallback to plain text if parsing fails
+                        // Fallback to plain text if parsing fails - Use SmartText
                         return (
                           <Card>
                             <CardHeader><CardTitle className="text-base sm:text-lg">Description</CardTitle></CardHeader>
                             <CardContent>
-                              <p className="whitespace-pre-wrap">{content || about}</p>
+                              <p className="whitespace-pre-wrap"><SmartText text={content || about} /></p>
                               {process.env.NODE_ENV !== 'production' && (
                                 <p className="mt-2 text-xs text-yellow-600">Note: Content looked like JSON but failed to parse.</p>
                               )}

@@ -116,7 +116,7 @@ const NpubLink = ({ npub }: { npub: string }) => {
   return (
     <Link 
       to={`/profile/${npub}`}
-      className="text-primary hover:underline font-medium inline-block max-w-full truncate"
+      className="text-primary hover:underline font-medium inline-block max-w-full"
     >
       @{displayText}
     </Link>
