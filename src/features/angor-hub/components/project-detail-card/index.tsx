@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Badge } from '@/shared/components/ui/badge';
 import { Separator } from '@/shared/components/ui/separator';
 import { 
-  Calendar, Clock, Target, User, Users, Link as LinkIcon, 
+   Clock, Target, User, Link as LinkIcon, 
   Twitter, Github, Mail, ExternalLink, Shield
 } from 'lucide-react';
 

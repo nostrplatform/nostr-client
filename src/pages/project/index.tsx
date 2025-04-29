@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import { ChevronLeft, ExternalLink, User, CircleDollarSign, Key, Calendar, Clock, Timer, Shield } from 'lucide-react';
+import { ChevronLeft, ExternalLink, User, CircleDollarSign, Key, Calendar, Clock, Timer } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { nip19 } from 'nostr-tools';
 import { useEffect, useState } from 'react';
@@ -11,9 +11,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Spinner } from '@/shared/components/spinner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
 import { Badge } from '@/shared/components/ui/badge';
-import { Progress } from '@/shared/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { Skeleton } from "@/shared/components/ui/skeleton";
+// Import ReactMarkdown (assuming it's installed)
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm'; // Optional: for GitHub Flavored Markdown
 
 // Feature Components & Hooks
 import { useAngorProject } from '@/features/angor-hub/hooks';
@@ -53,31 +55,6 @@ const AnimatedProgress = ({ value, colorClass }: { value: number; colorClass: st
     />
   </div>
 );
-
-// Expandable Description Text Component
-const DescriptionText = ({ text }: { text: string }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const maxLength = 200; // Adjust length as needed
-  const shouldShowButton = text.length > maxLength;
-
-  return (
-    <div className="space-y-1">
-      <p className={`text-sm sm:text-base text-muted-foreground leading-relaxed ${!isExpanded && "line-clamp-3"}`}>
-        {text}
-      </p>
-      {shouldShowButton && (
-        <Button
-          variant="link"
-          size="sm"
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="text-primary hover:text-primary/80 px-0 h-auto py-0"
-        >
-          {isExpanded ? 'Show less' : 'Show more'}
-        </Button>
-      )}
-    </div>
-  );
-};
 
 // Main Project Page Component
 export const ProjectPage = () => {
@@ -325,10 +302,17 @@ export const ProjectPage = () => {
                       const isLikelyJSON = (str?: string) => str?.trim().startsWith('{') && str?.trim().endsWith('}');
 
                       if (!isLikelyJSON(content)) {
-                        // Display as plain text - Use SmartText here too if desired
+                        // Display as Markdown text
                         return (
-                              <CardContent><p className="whitespace-pre-wrap"><SmartText text={content || about} /></p></CardContent>
-                         );
+                              <CardContent>
+                              {/* Use ReactMarkdown */}
+                              <div className="prose dark:prose-invert max-w-none">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                  {content || about}
+                                </ReactMarkdown>
+                              </div>
+                            </CardContent>
+                          );
                       }
 
                       try {
@@ -424,18 +408,20 @@ export const ProjectPage = () => {
                         );
                       } catch (error) {
                         console.error("Failed to parse JSON content:", error);
-                        // Fallback to plain text if parsing fails - Use SmartText
+                        // Fallback to Markdown text if parsing fails
                         return (
-                          <Card>
-                            <CardHeader><CardTitle className="text-base sm:text-lg">Description</CardTitle></CardHeader>
-                            <CardContent>
-                              <p className="whitespace-pre-wrap"><SmartText text={content || about} /></p>
+                              <CardContent>
+                              {/* Use ReactMarkdown */}
+                              <div className="prose dark:prose-invert max-w-none">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                  {content || about}
+                                </ReactMarkdown>
+                              </div>
                               {process.env.NODE_ENV !== 'production' && (
                                 <p className="mt-2 text-xs text-yellow-600">Note: Content looked like JSON but failed to parse.</p>
                               )}
                             </CardContent>
-                          </Card>
-                        );
+                         );
                       }
                     })()}
                   </div>
