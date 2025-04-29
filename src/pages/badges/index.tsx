@@ -1,6 +1,6 @@
-import { AwardIcon, PlusIcon, Image as ImageIcon, Loader2 } from 'lucide-react';
-import { NDKEvent, NDKFilter, NDKKind } from '@nostr-dev-kit/ndk';
-import { useActiveUser, useNdk } from 'nostr-hooks';
+import { AwardIcon, PlusIcon, Image as ImageIcon, Loader2, User as UserIcon } from 'lucide-react';
+import { NDKEvent, NDKFilter, NDKKind, NDKTag } from '@nostr-dev-kit/ndk';
+import { useActiveUser, useNdk,   useProfile } from 'nostr-hooks';
 import { nip19 } from 'nostr-tools';
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
 import { Textarea } from '@/shared/components/ui/textarea';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { ellipsis } from '@/shared/utils';
+import { Skeleton } from '@/shared/components/ui/skeleton';
 
 interface BadgeDefinition {
   id: string;
@@ -66,7 +67,7 @@ const parseBadgeAward = (event: NDKEvent): BadgeAward | null => {
     id: event.id,
     awarder: event.pubkey,
     recipient: pTag[1],
-    definitionEventId: aTag[1],
+    definitionEventId: aTag[1], // Format: <kind>:<pubkey>:<d>
     awardedAt: event.created_at ?? 0,
     event: event,
   };
@@ -79,6 +80,10 @@ export const BadgesPage = () => {
   const [isCreateDefDialogOpen, setIsCreateDefDialogOpen] = useState(false);
   const [isCreatingDef, setIsCreatingDef] = useState(false);
   const [newDefData, setNewDefData] = useState({ d: '', name: '', description: '', image: '', thumb: '' });
+  const [isAwardDialogOpen, setIsAwardDialogOpen] = useState(false);
+  const [isAwarding, setIsAwarding] = useState(false);
+  const [awardRecipientNpub, setAwardRecipientNpub] = useState('');
+  const [selectedDefinition, setSelectedDefinition] = useState<BadgeDefinition | null>(null);
 
   const pubkey = activeUser?.pubkey;
 
@@ -158,34 +163,62 @@ export const BadgesPage = () => {
   // --- Process Awarded/Received Badges and Fetch Definitions ---
   const [processedAwardedBadges, setProcessedAwardedBadges] = useState<BadgeAward[]>([]);
   const [processedReceivedBadges, setProcessedReceivedBadges] = useState<BadgeAward[]>([]);
+  const [badgeDefinitionsCache, setBadgeDefinitionsCache] = useState<Record<string, BadgeDefinition>>({});
+  const [isLoadingBadgeDefs, setIsLoadingBadgeDefs] = useState(false);
 
   useEffect(() => {
-    const processBadges = async (events: NDKEvent[], setter: React.Dispatch<React.SetStateAction<BadgeAward[]>>) => {
+    const processBadges = async (
+      events: NDKEvent[],
+      setter: React.Dispatch<React.SetStateAction<BadgeAward[]>>,
+      currentCache: Record<string, BadgeDefinition>
+    ) => {
       const parsedAwards = (events ?? [])
         .map(parseBadgeAward)
         .filter((award): award is BadgeAward => award !== null);
 
-      const definitionIds = new Set<string>();
+      const definitionCoords = new Set<string>();
       parsedAwards.forEach(award => {
-        if (award.definitionEventId) {
-          const parts = award.definitionEventId.split(':');
-          if (parts.length === 3) {
-            // Assuming the definition event ID is implicitly known or fetched separately if needed
-            // For simplicity, we'll try fetching based on author and 'd' tag if ID isn't directly available
-            // This part might need refinement based on how 'a' tags are commonly used
-          }
+        if (award.definitionEventId && !currentCache[award.definitionEventId]) {
+          definitionCoords.add(award.definitionEventId);
         }
       });
 
-      // TODO: Fetch definition events based on definitionIds if needed
-      // For now, just set the parsed awards
+      if (definitionCoords.size > 0 && ndk) {
+        setIsLoadingBadgeDefs(true);
+        try {
+          const filters = Array.from(definitionCoords).map(coord => {
+            const [kind, pubkey, d] = coord.split(':');
+            return {
+              kinds: [parseInt(kind)],
+              authors: [pubkey],
+              '#d': [d],
+              limit: 1,
+            };
+          });
+          const fetchedDefs = await ndk.fetchEvents(filters);
+          const newCacheEntries: Record<string, BadgeDefinition> = {};
+          fetchedDefs.forEach(event => {
+            const def = parseBadgeDefinition(event);
+            if (def) {
+              const coord = `${NDKKind.BadgeDefinition}:${def.pubkey}:${def.d}`;
+              newCacheEntries[coord] = def;
+            }
+          });
+          setBadgeDefinitionsCache(prev => ({ ...prev, ...newCacheEntries }));
+        } catch (error) {
+          console.error("Error fetching badge definitions for awards:", error);
+        } finally {
+          setIsLoadingBadgeDefs(false);
+        }
+      }
+
       setter(parsedAwards.sort((a, b) => b.awardedAt - a.awardedAt));
     };
 
-    processBadges(awardedEvents, setProcessedAwardedBadges);
-    processBadges(receivedEvents, setProcessedReceivedBadges);
+    processBadges(awardedEvents, setProcessedAwardedBadges, badgeDefinitionsCache);
+    processBadges(receivedEvents, setProcessedReceivedBadges, badgeDefinitionsCache);
 
-  }, [awardedEvents, receivedEvents, ndk]);
+  }, [awardedEvents, receivedEvents, ndk, badgeDefinitionsCache]);
 
 
   // --- Create Badge Definition Logic ---
@@ -231,6 +264,62 @@ export const BadgesPage = () => {
     }
   }, [ndk, pubkey, newDefData, toast]);
 
+  // --- Award Badge Logic ---
+  const openAwardDialog = (definition: BadgeDefinition) => {
+    setSelectedDefinition(definition);
+    setAwardRecipientNpub('');
+    setIsAwardDialogOpen(true);
+  };
+
+  const handleAwardBadge = useCallback(async () => {
+    if (!ndk || !pubkey || !selectedDefinition || !awardRecipientNpub) {
+      toast({ title: 'Error', description: 'Missing required information.', variant: 'destructive' });
+      return;
+    }
+
+    let recipientHex = '';
+    try {
+      recipientHex = npubToHex(awardRecipientNpub.trim());
+    } catch (e) {
+      toast({ title: 'Invalid Recipient', description: 'Please enter a valid npub.', variant: 'destructive' });
+      return;
+    }
+
+    setIsAwarding(true);
+    try {
+      const event = new NDKEvent(ndk);
+      event.kind = NDKKind.BadgeAward;
+      event.pubkey = pubkey;
+      event.created_at = Math.floor(Date.now() / 1000);
+      event.content = ''; // Content can be empty or contain a message
+
+      const definitionCoord = `${NDKKind.BadgeDefinition}:${selectedDefinition.pubkey}:${selectedDefinition.d}`;
+      const tags: NDKTag[] = [
+        ['a', definitionCoord],
+        ['p', recipientHex],
+        // Optionally add the definition event id if known
+        // ['e', selectedDefinition.id]
+      ];
+      event.tags = tags;
+
+      await event.sign();
+      const publishedRelays = await event.publish();
+
+      if (publishedRelays.size > 0) {
+        toast({ title: 'Success', description: `Badge awarded to ${ellipsis(awardRecipientNpub, 15)}.` });
+        setIsAwardDialogOpen(false);
+        // Optionally trigger a re-fetch or wait for subscription update
+      } else {
+        throw new Error('Failed to publish award to any relay.');
+      }
+    } catch (error: any) {
+      console.error("Failed to award badge:", error);
+      toast({ title: 'Error Awarding Badge', description: error.message || 'Please try again.', variant: 'destructive' });
+    } finally {
+      setIsAwarding(false);
+    }
+  }, [ndk, pubkey, selectedDefinition, awardRecipientNpub, toast]);
+
   // --- Render Logic ---
   if (activeUser === undefined) {
     return <div className="flex justify-center items-center h-full"><Spinner /></div>;
@@ -246,6 +335,7 @@ export const BadgesPage = () => {
 
   return (
     <div className="p-4 space-y-6">
+      {/* Header and Create Definition Dialog */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <AwardIcon className="w-6 h-6" />
@@ -296,6 +386,37 @@ export const BadgesPage = () => {
         </Dialog>
       </div>
 
+      {/* Award Badge Dialog */}
+      <Dialog open={isAwardDialogOpen} onOpenChange={setIsAwardDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Award Badge: {selectedDefinition?.name}</DialogTitle>
+            <DialogDescription>
+              Enter the npub of the user you want to award this badge to.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="recipient-npub" className="text-right">Recipient npub*</Label>
+              <Input
+                id="recipient-npub"
+                value={awardRecipientNpub}
+                onChange={(e) => setAwardRecipientNpub(e.target.value)}
+                className="col-span-3"
+                placeholder="npub1..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAwardDialogOpen(false)} disabled={isAwarding}>Cancel</Button>
+            <Button onClick={handleAwardBadge} disabled={isAwarding || !awardRecipientNpub}>
+              {isAwarding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Award Badge
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Tabs defaultValue="my-badges">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="my-badges">My Badges</TabsTrigger>
@@ -311,9 +432,14 @@ export const BadgesPage = () => {
               <CardDescription>Badges you have received.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {loadingReceived ? renderLoading() : processedReceivedBadges.length > 0 ? (
+              {loadingReceived || isLoadingBadgeDefs ? renderLoading() : processedReceivedBadges.length > 0 ? (
                 processedReceivedBadges.map((award) => (
-                  <BadgeAwardItem key={award.id} award={award} perspective="recipient" />
+                  <BadgeAwardItem
+                    key={award.id}
+                    award={award}
+                    perspective="recipient"
+                    definition={badgeDefinitionsCache[award.definitionEventId || '']}
+                  />
                 ))
               ) : (
                 <p className="text-muted-foreground text-center">You haven't earned any badges yet.</p>
@@ -330,9 +456,14 @@ export const BadgesPage = () => {
               <CardDescription>Badges you have given to others.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {loadingAwarded ? renderLoading() : processedAwardedBadges.length > 0 ? (
+              {loadingAwarded || isLoadingBadgeDefs ? renderLoading() : processedAwardedBadges.length > 0 ? (
                  processedAwardedBadges.map((award) => (
-                   <BadgeAwardItem key={award.id} award={award} perspective="awarder" />
+                   <BadgeAwardItem
+                     key={award.id}
+                     award={award}
+                     perspective="awarder"
+                     definition={badgeDefinitionsCache[award.definitionEventId || '']}
+                   />
                 ))
               ) : (
                 <p className="text-muted-foreground text-center">You haven't awarded any badges yet.</p>
@@ -350,7 +481,7 @@ export const BadgesPage = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               {loadingDefs ? renderLoading() : definitions.length > 0 ? (
-                definitions.map((def: BadgeDefinition) => (
+                definitions.map((def) => (
                   <div key={def.id} className="flex items-center justify-between gap-4 p-3 border rounded">
                      <div className="flex items-center gap-4 overflow-hidden">
                        <Avatar className="w-10 h-10 flex-shrink-0">
@@ -362,8 +493,7 @@ export const BadgesPage = () => {
                          <p className="text-sm text-muted-foreground truncate">{def.description}</p>
                        </div>
                      </div>
-                     {/* TODO: Add Award button functionality */}
-                     <Button variant="outline" size="sm" disabled>Award</Button>
+                     <Button variant="outline" size="sm" onClick={() => openAwardDialog(def)}>Award</Button>
                   </div>
                 ))
               ) : (
@@ -381,20 +511,19 @@ export const BadgesPage = () => {
 // --- Sub-Components ---
 
 // Component to display a single badge award
-const BadgeAwardItem = ({ award, perspective }: { award: BadgeAward; perspective: 'awarder' | 'recipient' }) => {
-  // TODO: Fetch definition details based on award.definitionEventId
-  // TODO: Fetch profile details for awarder/recipient
+const BadgeAwardItem = ({ award, perspective, definition }: { award: BadgeAward; perspective: 'awarder' | 'recipient'; definition?: BadgeDefinition }) => {
+  const otherPartyHex = perspective === 'awarder' ? award.recipient : award.awarder;
+  const { profile: otherPartyProfile, status: profileStatus } = useProfile({ pubkey: otherPartyHex });
 
-  const otherParty = perspective === 'awarder' ? award.recipient : award.awarder;
   const otherPartyNpub = useMemo(() => {
     try {
-      return nip19.npubEncode(otherParty);
-    } catch { return otherParty; }
-  }, [otherParty]);
+      return nip19.npubEncode(otherPartyHex);
+    } catch { return otherPartyHex; }
+  }, [otherPartyHex]);
 
-  // Placeholder for definition name - replace with fetched data
-  const badgeName = award.definitionEventId?.split(':')[2] || 'Unknown Badge';
-  const badgeThumb = undefined; // Replace with fetched thumb
+  const badgeName = definition?.name || award.definitionEventId?.split(':')[2] || 'Unknown Badge';
+  const badgeThumb = definition?.thumb || definition?.image;
+  const otherPartyName = otherPartyProfile?.displayName || otherPartyProfile?.name || ellipsis(otherPartyNpub, 15);
 
   return (
     <div className="flex items-center justify-between gap-4 p-3 border rounded">
@@ -405,12 +534,20 @@ const BadgeAwardItem = ({ award, perspective }: { award: BadgeAward; perspective
         </Avatar>
         <div className="overflow-hidden">
           <p className="font-semibold truncate">{badgeName}</p>
-          <p className="text-sm text-muted-foreground truncate">
-            {perspective === 'awarder' ? 'To: ' : 'From: '}
-            <Link to={`/profile/${otherPartyNpub}`} className="hover:underline">
-              {ellipsis(otherPartyNpub, 15)}
-            </Link>
-          </p>
+          <div className="text-sm text-muted-foreground truncate flex items-center gap-1">
+            <span>{perspective === 'awarder' ? 'To: ' : 'From: '}</span>
+            {profileStatus === 'loading' ? (
+              <Skeleton className="h-4 w-20 inline-block" />
+            ) : (
+              <Link to={`/profile/${otherPartyNpub}`} className="hover:underline flex items-center gap-1">
+                <Avatar className="w-4 h-4">
+                  <AvatarImage src={otherPartyProfile?.image} alt={otherPartyName} />
+                  <AvatarFallback className="text-xs"><UserIcon size={10} /></AvatarFallback>
+                </Avatar>
+                <span>{otherPartyName}</span>
+              </Link>
+            )}
+          </div>
         </div>
       </div>
       <span className="text-xs text-muted-foreground flex-shrink-0">
@@ -419,3 +556,7 @@ const BadgeAwardItem = ({ award, perspective }: { award: BadgeAward; perspective
     </div>
   );
 };
+
+function npubToHex(arg0: string): string {
+    throw new Error('Function not implemented.');
+}
