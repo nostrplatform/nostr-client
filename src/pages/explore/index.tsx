@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
-import { TrendingNotesWidget } from '@/features/trending-notes-widget';
 import { AngorHub } from '@/features/angor-hub';
-import { Compass, TrendingUp, Rocket } from 'lucide-react';
+import { Compass, Rocket } from 'lucide-react';
 
 export const ExplorePage = () => {
   const [currentTab, setCurrentTab] = useState<string>('angor');
@@ -40,34 +39,17 @@ export const ExplorePage = () => {
             <TabsList className="h-12 w-full rounded-none bg-transparent p-0">
               <TabsTrigger
                 value="angor"
-                className="flex-1 h-12 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none"
+                className="flex-1 h-12 rounded-none border-b border-transparent pb-2 data-[state=active]:shadow-none"
               >
                 <div className="flex items-center justify-center gap-2">
                   <Rocket className="h-4 w-4" />
                   <span>Angor Projects</span>
                 </div>
               </TabsTrigger>
-              <TabsTrigger
-                value="trending"
-                className="flex-1 h-12 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none"
-              >
-                <div className="flex items-center justify-center gap-2">
-                  <TrendingUp className="h-4 w-4" />
-                  <span>Trending Notes</span>
-                </div>
-              </TabsTrigger>
 
             </TabsList>
           </div>
 
-          <TabsContent
-            value="trending"
-            className="flex-1 overflow-auto px-2 pt-4 data-[state=inactive]:hidden"
-          >
-            <div className={`transition-opacity duration-300 ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
-              <TrendingNotesWidget />
-            </div>
-          </TabsContent>
 
           <TabsContent
             value="angor"

@@ -14,8 +14,7 @@ import { Link, Outlet, createBrowserRouter } from 'react-router-dom';
 import { ActiveUserWidget } from '@/features/active-user-widget';
 import { LoginWidget } from '@/features/login-widget';
 import { SearchWidget } from '@/features/search-widget';
-import { TrendingNotesWidget } from '@/features/trending-notes-widget';
-import { AngorHub } from '@/features/angor-hub';
+ import { AngorHub } from '@/features/angor-hub';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs';
 
 const Layout = () => {
@@ -231,24 +230,16 @@ const Layout = () => {
           id="rightbar"
           className="hidden border-l flex-col h-screen overflow-hidden items-center p-2 lg:flex lg:col-span-3"
         >
-          <Tabs defaultValue="trending" className="w-full h-full flex flex-col">
-            <TabsList className="w-full grid grid-cols-2 mb-4">
-              <TabsTrigger 
-                value="trending"
-                className="py-2 text-primary/60 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary transition-colors"
-              >
-                Trending Notes
-              </TabsTrigger>
+          <Tabs defaultValue="angor" className="w-full h-full flex flex-col">
+            <TabsList className="w-full grid grid-cols-1 mb-4">
+
               <TabsTrigger 
                 value="angor"
-                className="py-2 text-primary/60 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary transition-colors"
+                className="py-2 text-primary/60 data-[state=active]:text-primary border-b pb-4 transition-colors"
               >
                 Angor Projects
               </TabsTrigger>
             </TabsList>
-            <TabsContent value="trending" className="flex-1 overflow-auto">
-              <TrendingNotesWidget />
-            </TabsContent>
             <TabsContent value="angor" className="flex-1 overflow-auto">
               <AngorHub />
             </TabsContent>
