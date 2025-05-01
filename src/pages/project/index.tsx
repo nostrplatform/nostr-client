@@ -259,7 +259,7 @@ export const ProjectPage = () => {
               <AnimatedProgress value={financialData.progressPercentage} colorClass={financialData.progressColor} />
               <div className="flex justify-between text-xs sm:text-sm mt-2 flex-wrap gap-1">
                 <span className="text-primary font-medium">{financialData.progressPercentage}% Complete</span>
-                <span className="text-muted-foreground">{financialData.timeRemaining} left</span>
+                <span className="text-primary font-medium">{financialData.investorCount} Investor{financialData.investorCount !== 1 ? 's' : ''}</span>
               </div>
             </div>
           </div>
