@@ -63,7 +63,7 @@ export interface ProjectStats {
 
 export interface MediaItem {
   url: string;
-  type: string; // typically 'image' or 'video'
+  type: string; 
 }
 
 export interface NostrProjectData {
@@ -75,7 +75,7 @@ export interface NostrProjectData {
   metadata?: NDKUserProfile;
   details?: ProjectUpdate;
   profileEvent?: NDKEvent;
-  // New fields for better profile support
+  
   name?: string;
   picture?: string;
   about?: string;

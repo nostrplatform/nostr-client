@@ -54,14 +54,14 @@ export const MarkdownRenderers: Partial<Components> = {
     );
   },
 
-  // Blockquotes
+  
   blockquote: ({ children, ...props }: HTMLAttributes<HTMLQuoteElement>) => (
     <blockquote {...props} className="border-l-4 border-gray-300 dark:border-gray-600 pl-4 my-4 italic">
       {children}
     </blockquote>
   ),
 
-  // Lists
+  
   ul: ({ children, ...props }: HTMLAttributes<HTMLUListElement>) => (
     <ul {...props} className="list-disc list-inside my-4 space-y-2">
       {children}
@@ -74,7 +74,7 @@ export const MarkdownRenderers: Partial<Components> = {
     </ol>
   ),
 
-  // Tables
+  
   table: ({ children, ...props }: HTMLAttributes<HTMLTableElement>) => (
     <div className="my-4 overflow-x-auto">
       <table {...props} className="min-w-full divide-y divide-gray-300 dark:divide-gray-600">

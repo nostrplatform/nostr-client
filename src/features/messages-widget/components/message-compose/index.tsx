@@ -6,7 +6,7 @@ import { Button } from '@/shared/components/ui/button';
 import { ContactSearchModal } from '../contact-search-modal';
 import { insertMentionInText } from '../message-input/mention-helpers';
 
-// Your existing imports and component props...
+
 
 export const MessageComposeBox = (/* your existing props */) => {
   const [message, setMessage] = useState('');
@@ -14,7 +14,7 @@ export const MessageComposeBox = (/* your existing props */) => {
   const [cursorPosition, setCursorPosition] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
-  // Your existing state and functions...
+  
 
   const openMentionModal = () => {
     if (textareaRef.current) {
@@ -27,14 +27,14 @@ export const MessageComposeBox = (/* your existing props */) => {
     console.log('User selected:', user);
     if (!user || !user.npub) return;
     
-    // Get profile information
+    
     const profile = user.profile || {};
     const displayName = profile.displayName || profile.name || user.npub?.slice(0, 8) + '...';
     
-    // Format the mention - ensure @ is included
+    
     const mention = displayName.startsWith('@') ? displayName : `@${displayName}`;
     
-    // Insert the mention at cursor position
+    
     const { newText, newCursorPosition } = insertMentionInText(
       message, 
       mention, 
@@ -44,7 +44,7 @@ export const MessageComposeBox = (/* your existing props */) => {
     console.log('Setting message to:', newText);
     setMessage(newText);
     
-    // Set focus back to textarea after modal closes
+    
     setTimeout(() => {
       if (textareaRef.current) {
         textareaRef.current.focus();
@@ -53,7 +53,7 @@ export const MessageComposeBox = (/* your existing props */) => {
     }, 0);
   };
 
-  // Your existing send function...
+  
   
   return (
     <div className="relative">
@@ -78,7 +78,7 @@ export const MessageComposeBox = (/* your existing props */) => {
           </Button>
         </div>
         
-        {/* Your existing send button */}
+        
       </div>
 
       <ContactSearchModal

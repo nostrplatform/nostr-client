@@ -14,13 +14,13 @@ export const useProject = (projectId: string) => {
   const subscriptionsRef = useRef<(() => void)[]>([]);
   const nostrService = AngorNostrService.getInstance();
 
-  // Load initial project data
+  
   useEffect(() => {
     const loadProject = async () => {
       try {
         const projectData = await nostrService.fetchProjectData(projectId);
         if (projectData) {
-          // Get stats
+          
           const stats = await nostrService.fetchProjectStats(projectId);
           if (projectData && 'founderKey' in projectData && 'nostrEventId' in projectData) {
             setProject({
@@ -46,7 +46,7 @@ export const useProject = (projectId: string) => {
 
     loadProject();
 
-    // Subscribe to project updates
+    
     if (ndk) {
       const unsubscribe = nostrService.subscribeToProjectUpdates([projectId], (data) => {
         setProject(prev => ({ ...prev, ...data } as IndexedProject));
@@ -60,7 +60,7 @@ export const useProject = (projectId: string) => {
     };
   }, [projectId, ndk]);
 
-  // Handle tab changes and data loading
+  
   const handleTabChange = async (tab: string) => {
     setCurrentTab(tab);
     
@@ -72,7 +72,7 @@ export const useProject = (projectId: string) => {
     }
   };
 
-  // Fetch project updates
+  
   const fetchUpdates = async () => {
     if (!project?.details?.nostrPubKey || !ndk) return;
     
@@ -89,7 +89,7 @@ export const useProject = (projectId: string) => {
     }
   };
 
-  // Fetch project comments
+  
   const fetchComments = async () => {
     if (!project?.details?.nostrPubKey || !ndk) return;
     
@@ -106,7 +106,7 @@ export const useProject = (projectId: string) => {
     }
   };
 
-  // Handle favorites
+  
   const isFavorite = () => {
     const favorites = JSON.parse(localStorage.getItem('angor-hub-favorites') || '[]');
     return favorites.includes(projectId);

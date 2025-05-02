@@ -9,7 +9,7 @@ export const formatUserMention = (user: NDKUser): string => {
   const profile = user.profile || {};
   const displayName = profile.displayName || profile.name || user.npub?.slice(0, 8) + '...';
   
-  // Always include the @ prefix for mentions
+  
   return `@${displayName}`;
 };
 
@@ -24,7 +24,7 @@ export const insertMentionInText = (
   const beforeCursor = text.substring(0, cursorPosition);
   const afterCursor = text.substring(cursorPosition);
   
-  // Add a space after mention if there isn't one already
+  
   const mentionWithSpace = mention + ' ';
   
   const newText = `${beforeCursor}${mentionWithSpace}${afterCursor}`;

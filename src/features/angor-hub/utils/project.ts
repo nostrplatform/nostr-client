@@ -71,7 +71,7 @@ export const getPenaltiesPercentage = (stats?: { amountInPenalties?: number; amo
   return Number(((penalties / invested) * 100).toFixed(1));
 };
 
-// New utility functions for better project display
+
 
 export const getProjectStatus = (details?: { startDate?: number; expiryDate?: number }): 'upcoming' | 'active' | 'completed' => {
   if (!details) return 'active';

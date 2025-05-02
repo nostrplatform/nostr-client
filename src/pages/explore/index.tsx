@@ -7,7 +7,7 @@ export const ExplorePage = () => {
   const [currentTab, setCurrentTab] = useState<string>('angor');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Simulate loading state for better UX
+  
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);

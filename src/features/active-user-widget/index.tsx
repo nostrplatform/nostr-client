@@ -30,7 +30,7 @@ export const ActiveUserWidget = () => {
   const downloadCredentials = useCallback(
     async ({ npub, nsec }: { npub: string; nsec: string }) => {
       try {
-        // Generate QR codes first
+        
         const npubQR = await QRCode.toDataURL(npub, { 
           errorCorrectionLevel: 'H',
           margin: 1,
@@ -46,7 +46,7 @@ export const ActiveUserWidget = () => {
           });
         }
         
-        // Dynamic message based on available credentials
+        
         const getSecurityMessage = () => {
           const hasBoth = npub && nsec && npub.trim() !== '' && nsec.trim() !== '';
           const hasAny = (npub && npub.trim() !== '') || (nsec && nsec.trim() !== '');
@@ -60,7 +60,7 @@ export const ActiveUserWidget = () => {
           return "";
         };
         
-        // Create temporary component with pre-generated QR codes
+        
         const CredentialsWithQR = () => (
           <Document>
             <Page size="A4" style={{

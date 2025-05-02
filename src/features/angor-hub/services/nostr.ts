@@ -4,7 +4,7 @@ import { nip19 } from 'nostr-tools';
 
 const INDEXER_URL = 'https://fulcrum.angor.online/';
 
-// Default relay URLs for Angor & general Nostr communication
+
 const RELAY_URLS = [
   'wss://relay.angor.io',
   'wss://relay2.angor.io',
@@ -13,7 +13,7 @@ const RELAY_URLS = [
   'wss://purplepag.es'
 ];
 
-// Timeout for subscriptions in milliseconds
+
 const SUBSCRIPTION_TIMEOUT = 5000;
 
 /**
@@ -25,7 +25,7 @@ export class AngorNostrService {
   private isConnected = false;
   private activeSubscriptions: Set<NDKSubscription> = new Set();
   
-  // Caches
+  
   private projectCache: Map<string, NostrProjectData> = new Map();
   private statsCache: Map<string, ProjectStats> = new Map();
   private profileCache: Map<string, NDKUserProfile> = new Map();
@@ -37,7 +37,7 @@ export class AngorNostrService {
   }> = new Map();
 
   private constructor() {
-    // Initialize NDK with relays
+    
     this.ndk = new NDK({
       explicitRelayUrls: RELAY_URLS,
     });
@@ -62,7 +62,7 @@ export class AngorNostrService {
       ...relayUrls
     ]);
     
-    // Create new NDK with all relays
+    
     this.ndk = new NDK({
       explicitRelayUrls: Array.from(uniqueUrls),
     });
@@ -124,19 +124,19 @@ export class AngorNostrService {
       const ndk = await this.ensureConnected();
       const projectData: NostrProjectData = { projectId };
       
-      // Fetch project details and metadata
+      
       const event = await ndk.fetchEvent({ ids: [projectId] });
       if (event) {
         try {
           projectData.content = event.content;
           
-          // Parse project details
+          
           const details: ProjectUpdate = JSON.parse(event.content);
           projectData.details = details;
           
-          // If we have a Nostr pubkey, fetch profile & content
+          
           if (details.nostrPubKey) {
-            // Fetch profile
+            
             const profile = await this.fetchProfileData(details.nostrPubKey);
             if (profile) {
               projectData.metadata = profile;
@@ -146,7 +146,7 @@ export class AngorNostrService {
               projectData.website = profile.website;
             }
             
-            // Fetch content data
+            
             const contentData = await this.fetchProjectContent(details.nostrPubKey);
             projectData.content = contentData.content;
             projectData.media = contentData.media;
@@ -188,7 +188,7 @@ export class AngorNostrService {
         this.activeSubscriptions.add(sub);
         
         const timeout = setTimeout(() => {
-          sub.stop(); // Using stop() instead of close()
+          sub.stop(); 
           this.activeSubscriptions.delete(sub);
           resolve(profile);
         }, SUBSCRIPTION_TIMEOUT);
@@ -206,7 +206,7 @@ export class AngorNostrService {
         
         sub.on('eose', () => {
           clearTimeout(timeout);
-          sub.stop(); // Using stop() instead of close()
+          sub.stop(); 
           this.activeSubscriptions.delete(sub);
           resolve(profile);
         });
@@ -267,7 +267,7 @@ export class AngorNostrService {
         this.activeSubscriptions.add(sub);
         
         const timeout = setTimeout(() => {
-          sub.stop(); // Using stop() instead of close()
+          sub.stop(); 
           this.activeSubscriptions.delete(sub);
           this.contentCache.set(pubkey, result);
           resolve(result);
@@ -292,23 +292,23 @@ export class AngorNostrService {
                     result.media = [];
                   } else {
                     try {
-                      // Try parsing as JSON
+                      
                       const parsedMedia = JSON.parse(mediaContent);
                       
                       if (Array.isArray(parsedMedia)) {
-                        // Already an array of media items or URLs
+                        
                         result.media = parsedMedia;
                       } else if (typeof parsedMedia === 'object' && parsedMedia !== null) {
-                        // Single media item as object
+                        
                         result.media = [parsedMedia];
                       } else {
-                        // If not recognizable, try as string
+                        
                         result.media = [parsedMedia.toString()];
                       }
                       
                       console.log("Successfully parsed media:", result.media);
                     } catch (parseError) {
-                      // If not valid JSON, try treating as URLs
+                      
                       console.log("Failed to parse media JSON, trying alternative formats");
                       
                       if (mediaContent.includes(',')) {
@@ -333,29 +333,29 @@ export class AngorNostrService {
                     result.members = [];
                   } else {
                     try {
-                      // Try parsing as JSON
+                      
                       const parsedMembers = JSON.parse(event.content);
                       
                       if (Array.isArray(parsedMembers)) {
                         result.members = parsedMembers;
                       } else if (typeof parsedMembers === 'object' && parsedMembers !== null) {
-                        // Handle the specific case with "pubkeys" array
+                        
                         if ('pubkeys' in parsedMembers && Array.isArray(parsedMembers.pubkeys)) {
                           console.log("Found pubkeys array:", parsedMembers.pubkeys);
                           
-                          // Extract npub values from pubkeys array and convert any npub to hex if needed
+                          
                           interface MembersObject {
                             pubkeys: string[];
                           }
 
  
                           result.members = (parsedMembers as MembersObject).pubkeys.map<string | null>((key: string) => {
-                            // Check if it's already a hex key
+                            
                             if (typeof key === 'string' && key.length === 64 && /^[0-9a-f]+$/i.test(key)) {
                               return key;
                             }
                             
-                            // If it's an npub, try to convert it to hex
+                            
                             if (typeof key === 'string' && key.startsWith('npub1')) {
                               try {
                                 const { data } = nip19.decode(key);
@@ -367,11 +367,11 @@ export class AngorNostrService {
                             }
                             
                             return null;
-                          }).filter((key: string | null): key is string => Boolean(key)); // Type guard for non-null values
+                          }).filter((key: string | null): key is string => Boolean(key)); 
                         } else if ('members' in parsedMembers && Array.isArray(parsedMembers.members)) {
                           result.members = parsedMembers.members;
                         } else {
-                          // Try to extract any pubkeys from the object
+                          
                           const possibleMembers = Object.values(parsedMembers).filter(
                             (val): val is string => typeof val === 'string' && 
                             ((val.length === 64 && /^[0-9a-f]+$/i.test(val)) || 
@@ -391,7 +391,7 @@ export class AngorNostrService {
                           }).filter((key): key is string => key !== null) : [];
                         }
                       } else if (typeof parsedMembers === 'string') {
-                        // If it's a single string, it might be a comma-separated list
+                        
                         if (parsedMembers.includes(',')) {
                           result.members = parsedMembers.split(',').map(key => key.trim());
                         } else {
@@ -399,7 +399,7 @@ export class AngorNostrService {
                         }
                       }
                     } catch (parseError) {
-                      // If it's not valid JSON, try treating it as a comma-separated list
+                      
                       console.log("Failed to parse members JSON, trying alternative formats");
                       
                       if (event.content.includes(',')) {
@@ -451,7 +451,7 @@ export class AngorNostrService {
     const results: Record<string, NostrProjectData> = {};
     const uncachedIds = projectIds.filter(id => !this.projectCache.has(id));
     
-    // Return cached results for already fetched projects
+    
     projectIds.forEach(id => {
       if (this.projectCache.has(id)) {
         results[id] = this.projectCache.get(id)!;
@@ -463,14 +463,14 @@ export class AngorNostrService {
     }
 
     try {
-      // Fetch all project events in one query
+      
       const filter: NDKFilter = { 
         ids: uncachedIds 
       };
       
       const events = await ndk.fetchEvents(filter);
       
-      // Process each event
+      
       const pubkeysToFetch = new Set<string>();
       
       for (const event of events) {
@@ -482,11 +482,11 @@ export class AngorNostrService {
           };
           
           try {
-            // Extract project details
+            
             const details = JSON.parse(event.content) as ProjectUpdate;
             projectData.details = details;
             
-            // Add pubkey to the list to fetch profiles later
+            
             if (details.nostrPubKey) {
               pubkeysToFetch.add(details.nostrPubKey);
             }
@@ -501,11 +501,11 @@ export class AngorNostrService {
         }
       }
       
-      // Fetch profiles for all pubkeys at once
+      
       if (pubkeysToFetch.size > 0) {
         const pubkeyArray = Array.from(pubkeysToFetch);
         
-        // Fetch profiles
+        
         const profileFilter: NDKFilter = {
           kinds: [0],
           authors: pubkeyArray,
@@ -524,7 +524,7 @@ export class AngorNostrService {
           }
         }
         
-        // Fetch content for each pubkey
+        
         const contentFilters: NDKFilter[] = [
           {
             kinds: [NDKKind.AppSpecificData],
@@ -579,14 +579,14 @@ export class AngorNostrService {
           }
         }
         
-        // Update the results with profiles and content
+        
         for (const projectId in results) {
           const projectData = results[projectId];
           
           if (projectData.details?.nostrPubKey) {
             const pubkey = projectData.details.nostrPubKey;
             
-            // Add profile data
+            
             if (profileMap.has(pubkey)) {
               const profile = profileMap.get(pubkey)!;
               projectData.metadata = profile;
@@ -596,7 +596,7 @@ export class AngorNostrService {
               projectData.website = profile.website;
             }
             
-            // Add content data
+            
             if (contentMap.has(pubkey)) {
               const content = contentMap.get(pubkey)!;
               projectData.content = content.content || projectData.content;
@@ -604,7 +604,7 @@ export class AngorNostrService {
               projectData.members = content.members;
             }
             
-            // Update cache
+            
             this.projectCache.set(projectId, projectData);
           }
         }
@@ -638,7 +638,7 @@ export class AngorNostrService {
         
         sub.on('event', async (event) => {
           try {
-            // Process project update
+            
             const projectData: NostrProjectData = {
               projectId: event.id,
               content: event.content,
@@ -646,11 +646,11 @@ export class AngorNostrService {
             };
             
             try {
-              // Extract details
+              
               const details: ProjectUpdate = JSON.parse(event.content);
               projectData.details = details;
               
-              // If we have a pubkey, fetch profile
+              
               if (details.nostrPubKey) {
                 const profile = await this.fetchProfileData(details.nostrPubKey);
                 if (profile) {
@@ -661,7 +661,7 @@ export class AngorNostrService {
                   projectData.website = profile.website;
                 }
                 
-                // Fetch content
+                
                 const content = await this.fetchProjectContent(details.nostrPubKey);
                 projectData.content = content.content || projectData.content;
                 projectData.media = content.media;
@@ -671,7 +671,7 @@ export class AngorNostrService {
               console.error('Failed to parse project details:', e);
             }
             
-            // Update cache and invoke callback
+            
             this.projectCache.set(event.id, projectData);
             callback(projectData);
           } catch (error) {
@@ -683,10 +683,10 @@ export class AngorNostrService {
         console.error('Failed to connect to relays:', error);
       });
     
-    // Return unsubscribe function
+    
     return () => {
       if (sub) {
-        sub.stop(); // Using stop() instead of close()
+        sub.stop(); 
         if (this.activeSubscriptions.has(sub)) {
           this.activeSubscriptions.delete(sub);
         }
@@ -698,19 +698,19 @@ export class AngorNostrService {
    * Clean up resources
    */
   public cleanup(): void {
-    // Stop all active subscriptions
+    
     for (const sub of this.activeSubscriptions) {
-      sub.stop(); // Using stop() instead of close()
+      sub.stop(); 
     }
     this.activeSubscriptions.clear();
     
-    // Clear caches
+    
     this.projectCache.clear();
     this.statsCache.clear();
     this.profileCache.clear();
     this.contentCache.clear();
     
-    // Disconnect from NDK
+    
     this.isConnected = false;
     this.ndk = null;
   }

@@ -9,11 +9,11 @@ export const useContacts = () => {
   const { ndk } = useNdk();
   const { activeUser } = useActiveUser();
   
-  // Subscribe to the user's contact list
+  
   const subId = activeUser ? `user-contacts-${activeUser.pubkey}` : undefined;
   const { createSubscription, events } = useSubscription(subId);
   
-  // Function to filter contacts based on a query
+  
   const filterContacts = useCallback((query: string) => {
     if (!query.trim()) {
       return contacts;
@@ -32,7 +32,7 @@ export const useContacts = () => {
     });
   }, [contacts]);
   
-  // Function to search for users across the network
+  
   const searchContacts = useCallback(async (query: string) => {
     if (!ndk || !query.trim() || query.trim().length < 2) {
       return [];
@@ -41,7 +41,7 @@ export const useContacts = () => {
     const results: NDKUser[] = [];
     
     try {
-      // Try NIP-05 search if query contains @
+      
       if (query.includes('@') && query.includes('.')) {
         try {
           const user = new NDKUser({ nip05: query });
@@ -54,7 +54,7 @@ export const useContacts = () => {
         }
       }
       
-      // Try to search via relay.nostr.band
+      
       try {
         const filter: NDKFilter = { 
           kinds: [0], 
@@ -73,7 +73,7 @@ export const useContacts = () => {
             const user = new NDKUser({ pubkey: event.pubkey });
             user.profile = JSON.parse(event.content);
             
-            // Check if this user is already in results
+            
             if (!results.some(r => r.pubkey === user.pubkey)) {
               results.push(user);
             }
@@ -85,10 +85,10 @@ export const useContacts = () => {
         console.log('Search relay query failed:', e);
       }
       
-      // If we found remote results, also try to filter local contacts
+      
       const filteredContacts = filterContacts(query);
       
-      // Merge results, ensuring no duplicates
+      
       filteredContacts.forEach(contact => {
         if (!results.some(r => r.pubkey === contact.pubkey)) {
           results.push(contact);
@@ -102,7 +102,7 @@ export const useContacts = () => {
     }
   }, [ndk, filterContacts]);
   
-  // Fetch the user's contact list
+  
   useEffect(() => {
     if (!activeUser || !ndk) {
       setContacts([]);
@@ -112,12 +112,12 @@ export const useContacts = () => {
     
     setIsLoading(true);
     
-    // Get contacts from subscription
+    
     createSubscription({
       filters: [{ kinds: [NDKKind.Contacts], authors: [activeUser.pubkey], limit: 1 }],
     });
     
-    // Backup direct fetch if subscription is slow
+    
     const timeoutId = setTimeout(async () => {
       try {
         const filter: NDKFilter = { 
@@ -128,7 +128,7 @@ export const useContacts = () => {
         
         const contactsEvents = await ndk.fetchEvents([filter]);
         if (contactsEvents.size > 0 && events?.length === 0) {
-          // Process the contact list from direct fetch
+          
           processContactEvents(Array.from(contactsEvents));
         }
       } catch (error) {
@@ -139,7 +139,7 @@ export const useContacts = () => {
     return () => clearTimeout(timeoutId);
   }, [activeUser, ndk, createSubscription]);
   
-  // Process contact events into user profiles
+  
   const processContactEvents = useCallback(async (contactEvents: NDKEvent[]) => {
     if (contactEvents.length === 0 || !ndk) {
       setIsLoading(false);
@@ -162,7 +162,7 @@ export const useContacts = () => {
         return;
       }
       
-      // Fetch profiles in batches
+      
       const batchSize = 20;
       const batches = [];
       
@@ -181,11 +181,11 @@ export const useContacts = () => {
         try {
           const profileEvents = await ndk.fetchEvents([filter], { closeOnEose: true });
           
-          // Create a map of pubkey -> profile events
+          
           const profileMap = new Map<string, NDKEvent>();
           profileEvents.forEach(event => profileMap.set(event.pubkey, event));
           
-          // Create NDKUsers for each pubkey
+          
           const batchUsers = batch.map(pubkey => {
             const user = new NDKUser({ pubkey });
             const profileEvent = profileMap.get(pubkey);
@@ -207,7 +207,7 @@ export const useContacts = () => {
         }
       }
       
-      // Sort contacts by name
+      
       allContacts.sort((a, b) => {
         const nameA = a.profile?.name?.toLowerCase() || a.profile?.displayName?.toLowerCase() || a.npub;
         const nameB = b.profile?.name?.toLowerCase() || b.profile?.displayName?.toLowerCase() || b.npub;
@@ -222,7 +222,7 @@ export const useContacts = () => {
     }
   }, [ndk]);
   
-  // Process events from subscription
+  
   useEffect(() => {
     if (events && events.length > 0) {
       processContactEvents(events);

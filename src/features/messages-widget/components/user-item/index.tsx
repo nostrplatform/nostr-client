@@ -13,23 +13,23 @@ const calculateSearchScore = (query: string, text?: string): number => {
   const normalizedQuery = query.toLowerCase().trim();
   const normalizedText = text.toLowerCase().trim();
   
-  // Exact match
+  
   if (normalizedText === normalizedQuery) return 100;
   
-  // Exact word match
+  
   const words = normalizedText.split(/\s+/);
   if (words.includes(normalizedQuery)) return 90;
   
-  // Starts with query
+  
   if (normalizedText.startsWith(normalizedQuery)) return 80;
   
-  // Contains full query as substring
+  
   if (normalizedText.includes(normalizedQuery)) return 70;
   
-  // Word starts with query
+  
   if (words.some(word => word.startsWith(normalizedQuery))) return 60;
   
-  // All query characters exist in order
+  
   let pos = 0;
   let allCharsInOrder = true;
   for (const char of normalizedQuery) {
@@ -55,24 +55,24 @@ export const UserItem = memo(
       if (!searchQuery?.trim()) return true;
       
       const searchableItems = [
-        { text: profile?.name?.toString(), weight: 2.0 },    // Name has highest priority
+        { text: profile?.name?.toString(), weight: 2.0 },    
         { text: profile?.displayName?.toString(), weight: 2.0 },
-        { text: profile?.nip05?.toString(), weight: 1.5 },   // NIP-05 has medium priority
-        { text: npub, weight: 1.0 },                         // NPUB has lower priority
-        { text: pubkey, weight: 0.8 },                       // Pubkey has even lower priority
-        { text: profile?.about?.toString(), weight: 0.5 }    // About has lowest priority
+        { text: profile?.nip05?.toString(), weight: 1.5 },   
+        { text: npub, weight: 1.0 },                         
+        { text: pubkey, weight: 0.8 },                       
+        { text: profile?.about?.toString(), weight: 0.5 }    
       ];
       
-      // Calculate weighted scores for all items
+      
       const scores = searchableItems.map(item => ({
         score: calculateSearchScore(searchQuery, item.text) * item.weight,
         text: item.text
       }));
       
-      // Get the highest score
+      
       const maxScore = Math.max(...scores.map(s => s.score));
       
-      // Only show if score is high enough (adjust threshold as needed)
+      
       return maxScore >= 40;
     }, [profile, npub, pubkey, searchQuery]);
 

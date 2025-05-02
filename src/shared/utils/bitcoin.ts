@@ -7,9 +7,9 @@
 export function satoshiToBitcoin(satoshis: number, maxDecimals: number = 8): string {
   const btcValue = satoshis / 100000000;
   
-  // Format with fixed decimal places first
+  
   const fixed = btcValue.toFixed(maxDecimals);
   
-  // Remove trailing zeros and decimal point if not needed
+  
   return fixed.replace(/\.?0+$/, '');
 }

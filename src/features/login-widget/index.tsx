@@ -15,7 +15,7 @@ import { Muted } from '@/shared/components/ui/typography/muted';
 
 import { useLoginWidget } from './hooks';
 
-// Check out the `example-components` folder to see how to use this component
+
 
 export const LoginWidget = () => {
   const {

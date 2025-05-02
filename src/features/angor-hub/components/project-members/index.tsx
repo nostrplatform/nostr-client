@@ -8,7 +8,7 @@ import { Badge } from '@/shared/components/ui/badge';
 import { Skeleton } from '@/shared/components/ui/skeleton';
 
 const MemberCard = ({ pubkey }: { pubkey: string }) => {
-  // Convert npub to hex format if needed
+  
   const hexPubkey = pubkey.startsWith('npub1') ? 
     (() => {
       try {
@@ -25,7 +25,7 @@ const MemberCard = ({ pubkey }: { pubkey: string }) => {
   const navigate = useNavigate();
   const loading = !profile;
   
-  // Always encode to npub for display and navigation
+  
   const npub = hexPubkey.length === 64 ? nip19.npubEncode(hexPubkey) : pubkey;
   const shortPubkey = `${hexPubkey.slice(0, 4)}...${hexPubkey.slice(-4)}`;
 
@@ -81,7 +81,7 @@ const MemberCard = ({ pubkey }: { pubkey: string }) => {
 export const ProjectMembers = ({ members }: { members?: string[] }) => {
   console.log("Rendering members:", members);
   
-  // Handle empty or invalid members array
+  
   if (!members?.length) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
@@ -91,14 +91,14 @@ export const ProjectMembers = ({ members }: { members?: string[] }) => {
     );
   }
 
-  // Filter out any invalid pubkeys, accepting both hex format and npub format
+  
   const validMembers = members.filter(key => {
     if (typeof key !== 'string') return false;
     
-    // Check for hex format pubkeys (64 chars, hex)
+    
     if (key.length === 64 && /^[0-9a-f]+$/i.test(key)) return true;
     
-    // Check for npub format
+    
     if (key.startsWith('npub1')) {
       try {
         nip19.decode(key);

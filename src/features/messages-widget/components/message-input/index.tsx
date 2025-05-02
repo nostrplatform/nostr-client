@@ -25,7 +25,7 @@ export const MessageInput = ({
   const [cursorPosition, setCursorPosition] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Simple debug to ensure onChange is working
+  
   useEffect(() => {
     console.log("MessageInput current value:", value);
   }, [value]);
@@ -45,11 +45,11 @@ export const MessageInput = ({
       return;
     }
     
-    // Format the mention string
+    
     const mention = formatUserMention(user);
     console.log('Formatted mention:', mention);
     
-    // Insert the mention at cursor position
+    
     const { newText, newCursorPosition } = insertMentionInText(
       value || '', 
       mention, 
@@ -58,10 +58,10 @@ export const MessageInput = ({
     
     console.log('New text with mention:', newText);
     
-    // Update the input value
+    
     onChange(newText);
     
-    // Focus back to textarea
+    
     setTimeout(() => {
       if (textareaRef.current) {
         textareaRef.current.focus();

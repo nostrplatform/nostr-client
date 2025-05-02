@@ -5,7 +5,7 @@ import { nip19 } from 'nostr-tools';
 import { useEffect, useState } from 'react';
 import { motion } from "framer-motion";
 
-// UI Components
+
 import { Button } from '@/shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Spinner } from '@/shared/components/spinner';
@@ -13,11 +13,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avat
 import { Badge } from '@/shared/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { Skeleton } from "@/shared/components/ui/skeleton";
-// Import ReactMarkdown (assuming it's installed)
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm'; // Optional: for GitHub Flavored Markdown
 
-// Feature Components & Hooks
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm'; 
+
+
 import { useAngorProject } from '@/features/angor-hub/hooks';
 import { AngorNostrService } from '@/features/angor-hub/services/nostr';
 import { ProjectMediaGallery } from '@/features/angor-hub/components/project-media-gallery';
@@ -25,14 +25,14 @@ import { ProjectFAQ } from '@/features/angor-hub/components/project-faq';
 import { ProjectMembers } from '@/features/angor-hub/components/project-members';
 import { ProjectDetailCard } from '@/features/angor-hub/components/project-detail-card';
 import { ProjectSocialLinks } from '@/features/angor-hub/components/project-social-links';
-// Import SmartText
+
 import { SmartText } from '@/features/angor-hub/components/smart-text';
 
-// Utils
+
 import { satoshiToBitcoin } from '@/shared/utils/bitcoin';
 import { getProgressColor, getProjectStatus, getRemainingTime, getSpentPercentage, getPenaltiesPercentage } from '@/features/angor-hub/utils/project';
 
-// Loading Skeleton Component
+
 const ProjectSkeleton = () => (
   <div className="space-y-4 animate-pulse p-4">
     <Skeleton className="h-8 w-48" />
@@ -44,7 +44,7 @@ const ProjectSkeleton = () => (
   </div>
 );
 
-// Animated Progress Bar Component
+
 const AnimatedProgress = ({ value, colorClass }: { value: number; colorClass: string }) => (
   <div className="relative h-2 w-full bg-muted-foreground/20 rounded-full overflow-hidden">
     <motion.div
@@ -56,7 +56,7 @@ const AnimatedProgress = ({ value, colorClass }: { value: number; colorClass: st
   </div>
 );
 
-// Main Project Page Component
+
 export const ProjectPage = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
@@ -71,7 +71,7 @@ export const ProjectPage = () => {
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const nostrService = AngorNostrService.getInstance();
 
-  // Fetch extra details (content, media, members, faq)
+  
   useEffect(() => {
     const fetchExtraDetails = async () => {
       if (!project || !project.details?.nostrPubKey) return;
@@ -93,9 +93,9 @@ export const ProjectPage = () => {
     };
 
     fetchExtraDetails();
-  }, [project, nostrService]); // Added nostrService dependency
+  }, [project, nostrService]); 
 
-  // Loading State
+  
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center p-8 h-full">
@@ -105,7 +105,7 @@ export const ProjectPage = () => {
     );
   }
 
-  // Project Not Found State
+  
   if (!project) {
     return (
       <div className="flex flex-col items-center justify-center p-8">
@@ -118,7 +118,7 @@ export const ProjectPage = () => {
     );
   }
 
-  // --- Prepare Data for Display ---
+  
   const name = project.metadata?.name || project.profile?.name || 'Unnamed Project';
   const banner = project.metadata?.banner || project.profile?.banner;
   const picture = project.metadata?.picture || project.profile?.picture;
@@ -129,7 +129,7 @@ export const ProjectPage = () => {
   const npub = project.details?.nostrPubKey ? nip19.npubEncode(project.details.nostrPubKey) : undefined;
   const projectStatus = getProjectStatus(project.details);
 
-  // Process Financial Data
+  
   const processFinancialData = () => {
     if (!stats || !project.details?.targetAmount) return null;
     const targetAmount = project.details.targetAmount;
@@ -151,10 +151,10 @@ export const ProjectPage = () => {
   };
   const financialData = processFinancialData();
 
-  // --- Render Component ---
+  
   return (
     <div className="flex flex-col space-y-4 sm:space-y-6 p-2 sm:p-4 pb-16 max-w-7xl mx-auto w-full">
-      {/* Header */}
+      
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="Go back">
           <ChevronLeft />
@@ -162,9 +162,9 @@ export const ProjectPage = () => {
         <h2 className="text-lg sm:text-xl font-semibold truncate">Project Details</h2>
       </div>
 
-      {/* Hero Section */}
+      
       <Card className="border shadow-sm overflow-hidden">
-        {/* Banner */}
+        
         <div className="relative w-full h-[150px] sm:h-[200px] md:h-[250px] bg-muted">
           {banner ? (
             <img src={banner} alt={`${name} banner`} className="w-full h-full object-cover" />
@@ -174,10 +174,10 @@ export const ProjectPage = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
         </div>
 
-        {/* Profile Content */}
+        
         <div className="relative -mt-16 sm:-mt-20 px-3 sm:px-6 pb-6">
           <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-center md:items-end">
-            {/* Avatar & Status */}
+            
             <div className="relative flex-shrink-0">
               <Avatar className="w-24 h-24 sm:w-32 sm:h-32 border-4 border-background rounded-full shadow-lg">
                 <AvatarImage src={picture} alt={name} className="object-cover" />
@@ -198,13 +198,13 @@ export const ProjectPage = () => {
               </div>
             </div>
 
-            {/* Project Info & Actions */}
+            
             <div className=" gap-4 md:gap-6">
               <div className="text-center md:text-left space-y-1">
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight line-clamp-2 break-words">
                   {name}
                 </h1>
-                {/* Use SmartText for about */}
+                
                 <div className="text-sm sm:text-base text-muted-foreground leading-relaxed">
                    <SmartText text={about} />
                 </div>
@@ -214,7 +214,7 @@ export const ProjectPage = () => {
                   </Badge>
                 )}
               </div>
-              {/* Action Buttons - Remove Invest and Profile, keep others */}
+              
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -248,7 +248,7 @@ export const ProjectPage = () => {
           </div>
         </div>
 
-        {/* Funding Progress Bar */}
+        
         {financialData && (
           <div className="px-3 sm:px-6 pb-4 sm:pb-6 border-t border-border">
              <div className="bg-muted/50 rounded-lg p-3 sm:p-4 mt-4">
@@ -266,9 +266,9 @@ export const ProjectPage = () => {
         )}
       </Card>
 
-      {/* Main Content Area (Details + Tabs) */}
+      
       <div className="grid grid-cols-1">
-        {/* Left Column: Details & Socials */}
+        
         <div className="lg:col-span-1 space-y-4 sm:space-y-6">
           <ProjectDetailCard
             project={project}
@@ -278,11 +278,11 @@ export const ProjectPage = () => {
           <ProjectSocialLinks externalIdentities={project.externalIdentities} />
         </div>
 
-        {/* Right Column: Tabs */}
+        
         <div className="lg:col-span-2 mt-6">
           <Card className="overflow-hidden">
             <Tabs defaultValue="description" className="w-full">
-              {/* Responsive Tabs List */}
+              
               <div className="overflow-x-auto">
                 <TabsList className="grid w-full grid-cols-5 min-w-[400px]">
                   <TabsTrigger value="description">Description</TabsTrigger>
@@ -293,7 +293,7 @@ export const ProjectPage = () => {
                 </TabsList>
               </div>
 
-              {/* Description Tab Content */}
+              
               <TabsContent value="description" className="mt-0 p-4">
                 {isLoadingDetails ? <ProjectSkeleton /> : (
                   <div className="prose dark:prose-invert max-w-none text-sm sm:text-base">
@@ -302,10 +302,10 @@ export const ProjectPage = () => {
                       const isLikelyJSON = (str?: string) => str?.trim().startsWith('{') && str?.trim().endsWith('}');
 
                       if (!isLikelyJSON(content)) {
-                        // Display as Markdown text
+                        
                         return (
                               <CardContent>
-                              {/* Use ReactMarkdown */}
+                              
                               <div className="prose dark:prose-invert max-w-none">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                   {content || about}
@@ -321,10 +321,10 @@ export const ProjectPage = () => {
 
                         const formatTimestamp = (ts: number) => ts ? new Date(ts * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : "N/A";
 
-                        // Render structured JSON data
+                        
                         return (
                           <div className="grid gap-4">
-                            {/* Overview */}
+                            
                             <Card>
                               <CardHeader><CardTitle className="text-base sm:text-lg">Overview</CardTitle></CardHeader>
                               <CardContent className="grid gap-3 md:grid-cols-2 text-xs sm:text-sm">
@@ -339,7 +339,7 @@ export const ProjectPage = () => {
                                 ))}
                               </CardContent>
                             </Card>
-                            {/* Timeline */}
+                            
                             {(jsonContent.startDate || jsonContent.expiryDate || jsonContent.penaltyDays) && (
                               <Card>
                                 <CardHeader><CardTitle className="text-base sm:text-lg">Timeline</CardTitle></CardHeader>
@@ -368,7 +368,7 @@ export const ProjectPage = () => {
                                 </CardContent>
                               </Card>
                             )}
-                            {/* Stages */}
+                            
                             {jsonContent.stages?.length > 0 && (
                               <Card>
                                 <CardHeader><CardTitle className="text-base sm:text-lg">Funding Stages</CardTitle></CardHeader>
@@ -385,7 +385,7 @@ export const ProjectPage = () => {
                                 </CardContent>
                               </Card>
                             )}
-                            {/* Seeders */}
+                            
                             {jsonContent.projectSeeders && (
                               <Card>
                                 <CardHeader><CardTitle className="text-base sm:text-lg">Seeders</CardTitle></CardHeader>
@@ -408,10 +408,10 @@ export const ProjectPage = () => {
                         );
                       } catch (error) {
                         console.error("Failed to parse JSON content:", error);
-                        // Fallback to Markdown text if parsing fails
+                        
                         return (
                               <CardContent>
-                              {/* Use ReactMarkdown */}
+                              
                               <div className="prose dark:prose-invert max-w-none">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                   {content || about}
@@ -428,7 +428,7 @@ export const ProjectPage = () => {
                 )}
               </TabsContent>
 
-              {/* Financial Tab Content */}
+              
               <TabsContent value="financial" className="mt-6 p-4">
                 {financialData && stats ? (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4 sm:space-y-6">
@@ -461,17 +461,17 @@ export const ProjectPage = () => {
                 )}
               </TabsContent>
 
-              {/* Media Tab Content */}
+              
               <TabsContent value="media" className="mt-0 p-4">
                 <ProjectMediaGallery media={extraDetails.media} />
               </TabsContent>
 
-              {/* Team Tab Content */}
+              
               <TabsContent value="team" className="mt-0 p-4">
                 {isLoadingDetails ? <ProjectSkeleton /> : <ProjectMembers members={extraDetails.members} />}
               </TabsContent>
 
-              {/* FAQ Tab Content */}
+              
               <TabsContent value="faq" className="mt-0 p-4">
                 <ProjectFAQ faq={extraDetails.faq} />
               </TabsContent>

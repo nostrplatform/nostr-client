@@ -73,7 +73,7 @@ export const ProjectProfile = ({
   const picture = project.metadata?.picture || project.profile?.picture;
   const about = project.metadata?.about || project.profile?.about || 'No description available';
   
-  // Format dates
+  
   const formatDate = (timestamp: number) => {
     return new Date(timestamp * 1000).toLocaleDateString('en-US', {
       year: 'numeric',

@@ -3,17 +3,17 @@ import { useSubscription } from 'nostr-hooks';
 import { useEffect, useMemo } from 'react';
 
 export const useNoteReactions = (event: NDKEvent | undefined) => {
-  // For likes
+  
   const likesSubId = event ? `note-all-likes-${event.id}` : undefined;
   const { createSubscription: createLikesSubscription, events: likesEvents, isLoading: isLoadingLikes } = 
     useSubscription(likesSubId);
 
-  // For zaps
+  
   const zapsSubId = event ? `note-all-zaps-${event.id}` : undefined;
   const { createSubscription: createZapsSubscription, events: zapsEvents, isLoading: isLoadingZaps } = 
     useSubscription(zapsSubId);
 
-  // For reposts
+  
   const repostsSubId = event ? `note-all-reposts-${event.id}` : undefined;
   const { 
     createSubscription: createRepostsSubscription, 
@@ -21,22 +21,22 @@ export const useNoteReactions = (event: NDKEvent | undefined) => {
     isLoading: isLoadingReposts 
   } = useSubscription(repostsSubId);
 
-  // Filter valid likes (content === '+')
+  
   const likes = useMemo(() => 
     [...(likesEvents || [])].filter(e => e.content === '+').sort((a, b) => (b.created_at || 0) - (a.created_at || 0))
   , [likesEvents]);
 
-  // Sort zaps by amount
+  
   const zaps = useMemo(() => 
     [...(zapsEvents || [])].sort((a, b) => (b.created_at || 0) - (a.created_at || 0))
   , [zapsEvents]);
 
-  // Filter and sort reposts
+  
   const reposts = useMemo(() => 
     [...(repostsEvents || [])].sort((a, b) => (b.created_at || 0) - (a.created_at || 0))
   , [repostsEvents]);
 
-  // Subscribe to likes
+  
   useEffect(() => {
     if (!event) return;
     
@@ -46,7 +46,7 @@ export const useNoteReactions = (event: NDKEvent | undefined) => {
     });
   }, [event, createLikesSubscription]);
 
-  // Subscribe to zaps
+  
   useEffect(() => {
     if (!event) return;
     
@@ -56,7 +56,7 @@ export const useNoteReactions = (event: NDKEvent | undefined) => {
     });
   }, [event, createZapsSubscription]);
 
-  // Subscribe to reposts
+  
   useEffect(() => {
     if (!event) return;
     

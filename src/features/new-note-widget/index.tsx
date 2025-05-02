@@ -33,12 +33,12 @@ export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent 
   const handlePost = () => {
     post();
     setContent('');
-    // Don't change focus state after posting
+    
   };
 
   const handleCancel = () => {
     setContent('');
-    setIsFocused(false); // Only collapse the form when cancel is clicked
+    setIsFocused(false); 
   };
 
   const handleMentionSelect = (user: any) => {
@@ -47,15 +47,15 @@ export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent 
     const beforeMention = content.substring(0, selectedMention.start);
     const afterMention = content.substring(selectedMention.end);
     
-    // Replace the current @mention text with the selected user's name or npub
+    
     const newText = `${beforeMention}@${user.npub} ${afterMention}`;
     setContent(newText);
     
-    // Reset mention selection state
+    
     setSelectedMention(null);
     setShowContactsModal(false);
     
-    // Focus back on the textarea after selection
+    
     setTimeout(() => {
       textareaRef.current?.focus();
     }, 100);
@@ -65,11 +65,11 @@ export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent 
     const newValue = e.target.value;
     setContent(newValue);
     
-    // Find if cursor is positioned at a mention
+    
     const cursorPos = e.target.selectionStart || 0;
     const textBeforeCursor = newValue.substring(0, cursorPos);
     
-    // Check if we're typing a mention (after @)
+    
     const mentionMatch = /@(\w*)$/.exec(textBeforeCursor);
     if (mentionMatch) {
       const start = mentionMatch.index;
@@ -93,7 +93,7 @@ export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent 
       return;
     }
     
-    // @ts-ignore - TypeScript doesn't know about SpeechRecognition API
+    
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const newRecognition = new SpeechRecognition();
     
@@ -104,7 +104,7 @@ export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent 
     newRecognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
       setContent((prev) => {
-        // Add a space before the transcript if prev doesn't end with a space
+        
         const separator = prev && !prev.endsWith(' ') ? ' ' : '';
         return prev + separator + transcript;
       });
@@ -120,7 +120,7 @@ export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent 
     newRecognition.start();
   };
 
-  // Clean up speech recognition when component unmounts
+  
   useEffect(() => {
     return () => {
       if (recognition) {
@@ -260,7 +260,7 @@ export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent 
         </div>
       </div>
       
-      {/* Contact search modal for mentions */}
+      
       <ContactSearchModal 
         isOpen={showContactsModal}
         onClose={() => setShowContactsModal(false)}

@@ -18,14 +18,14 @@ interface ProjectDetailCardProps {
 }
 
 export const ProjectDetailCard = ({ project, stats, onVisitWebsite }: ProjectDetailCardProps) => {
-  // Extract project details
+  
   const website = project.metadata?.website;
   const externalIdentities = project.externalIdentities || [];
   const lud16 = project.metadata?.lud16;
   const startDate = project.details?.startDate ? formatDate(project.details.startDate) : 'N/A';
   const expiryDate = project.details?.expiryDate ? formatDate(project.details.expiryDate) : 'N/A';
   
-  // Format founder key
+  
   const founderKey = project.details?.founderKey
     ? `${project.details.founderKey.substring(0, 8)}...${project.details.founderKey.substring(project.details.founderKey.length - 8)}`
     : 'N/A';
@@ -36,7 +36,7 @@ export const ProjectDetailCard = ({ project, stats, onVisitWebsite }: ProjectDet
         <CardTitle className="text-lg">Project Details</CardTitle>
       </CardHeader>
       <CardContent className="pt-6 space-y-6">
-        {/* Timeline Information */}
+        
         <div className="space-y-3">
           <h3 className="text-sm font-medium flex items-center gap-2">
             <Clock className="h-4 w-4 text-muted-foreground" />
@@ -56,7 +56,7 @@ export const ProjectDetailCard = ({ project, stats, onVisitWebsite }: ProjectDet
         
         <Separator />
         
-        {/* Financial Information */}
+        
         <div className="space-y-3">
           <h3 className="text-sm font-medium flex items-center gap-2">
             <Target className="h-4 w-4 text-muted-foreground" />
@@ -82,7 +82,7 @@ export const ProjectDetailCard = ({ project, stats, onVisitWebsite }: ProjectDet
             )}
           </div>
           
-          {/* Only show if project has penalty days specified */}
+          
           {project.details?.penaltyDays && (
             <div className="flex flex-col p-3 bg-muted/50 rounded-lg">
               <span className="text-xs text-muted-foreground">Penalty Period</span>
@@ -93,7 +93,7 @@ export const ProjectDetailCard = ({ project, stats, onVisitWebsite }: ProjectDet
 
         <Separator />
         
-        {/* Founder Information */}
+        
         <div className="space-y-3">
           <h3 className="text-sm font-medium flex items-center gap-2">
             <User className="h-4 w-4 text-muted-foreground" />
@@ -105,7 +105,7 @@ export const ProjectDetailCard = ({ project, stats, onVisitWebsite }: ProjectDet
           </div>
         </div>
 
-        {/* External Links */}
+        
         {(website || externalIdentities.length > 0 || lud16) && (
           <>
             <Separator />
@@ -161,7 +161,7 @@ export const ProjectDetailCard = ({ project, stats, onVisitWebsite }: ProjectDet
           </>
         )}
 
-        {/* Project Stages */}
+        
         {project.details?.stages && project.details.stages.length > 0 && (
           <>
             <Separator />

@@ -24,32 +24,32 @@ export const useNewNoteWidget = ({
     }
   }, [activeUser]);
 
-  // Process mentions and hashtags in the content
+  
   const processTagsInContent = (content: string) => {
     const parsedTags = parseMentionsAndHashtags(content);
     const tags: string[][] = [];
     
     parsedTags.forEach(tag => {
       if (tag.type === 'mention') {
-        // Extract the pubkey from the mention text (after the @ symbol)
+        
         const mentionText = tag.text.substring(1).trim();
         
-        // Check if it's an npub or hex format pubkey
+        
         if (mentionText.startsWith('npub1')) {
           try {
             const pubkey = normalizePublicKey(mentionText);
             if (pubkey) {
-              tags.push(['p', pubkey]); // Add as a 'p' tag
+              tags.push(['p', pubkey]); 
             }
           } catch (e) {
             console.error('Invalid npub:', e);
           }
         }
       } else if (tag.type === 'hashtag') {
-        // Extract hashtag without the # symbol
+        
         const hashtagText = tag.value;
         if (hashtagText) {
-          tags.push(['t', hashtagText]); // Add as a 't' tag
+          tags.push(['t', hashtagText]); 
         }
       }
     });
@@ -71,7 +71,7 @@ export const useNewNoteWidget = ({
     e.kind = 1;
     e.content = content;
     
-    // Add tags from mentions and hashtags
+    
     let tags = processTagsInContent(content);
 
     if (replyingToEvent) {
@@ -84,17 +84,17 @@ export const useNewNoteWidget = ({
         tags.push(['e', replyingToEvent.id, '', 'root']);
       }
 
-      // Add p-tags from the replied-to event
+      
       replyingToEvent.tags.forEach((tag) => {
         if (tag.length > 0 && tag[0] === 'p') {
-          // Check if this p-tag is already in our tags (to avoid duplicates)
+          
           if (!tags.some(t => t[0] === 'p' && t[1] === tag[1])) {
             tags.push(tag);
           }
         }
       });
 
-      // Make sure we add the author of the replied-to event
+      
       if (!tags.some(t => t[0] === 'p' && t[1] === replyingToEvent.pubkey)) {
         tags.push(['p', replyingToEvent.pubkey]);
       }

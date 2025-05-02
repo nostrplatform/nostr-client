@@ -17,11 +17,11 @@ export const parseMentionsAndHashtags = (text: string): ParsedTag[] => {
   
   const tags: ParsedTag[] = [];
   
-  // Find mentions
+  
   let match: RegExpExecArray | null;
   while ((match = mentionRegex.exec(text)) !== null) {
-    const fullMatch = match[0]; // e.g., "@username"
-    const username = match[1]; // e.g., "username"
+    const fullMatch = match[0]; 
+    const username = match[1]; 
     
     tags.push({
       type: 'mention',
@@ -32,10 +32,10 @@ export const parseMentionsAndHashtags = (text: string): ParsedTag[] => {
     });
   }
   
-  // Find hashtags
+  
   while ((match = hashtagRegex.exec(text)) !== null) {
-    const fullMatch = match[0]; // e.g., "#topic"
-    const tag = match[1]; // e.g., "topic"
+    const fullMatch = match[0]; 
+    const tag = match[1]; 
     
     tags.push({
       type: 'hashtag',
@@ -46,7 +46,7 @@ export const parseMentionsAndHashtags = (text: string): ParsedTag[] => {
     });
   }
   
-  // Sort by position in text
+  
   return tags.sort((a, b) => a.index - b.index);
 };
 
@@ -54,12 +54,12 @@ export const parseMentionsAndHashtags = (text: string): ParsedTag[] => {
  * Attempts to convert an npub or hex pubkey into the other format
  */
 export const normalizePublicKey = (pubkey: string): string => {
-  // If it's already a hex pubkey
+  
   if (/^[0-9a-f]{64}$/i.test(pubkey)) {
     return pubkey;
   }
   
-  // If it's an npub, try to convert to hex
+  
   if (pubkey.startsWith('npub1')) {
     try {
       const { type, data } = nip19.decode(pubkey);
@@ -78,15 +78,15 @@ export const normalizePublicKey = (pubkey: string): string => {
  * Converts a mention (@username or @npub) to a proper pubkey if possible
  */
 export const resolveMention = (mention: string): string | null => {
-  // Remove the @ symbol
+  
   const value = mention.startsWith('@') ? mention.substring(1) : mention;
   
-  // If it looks like an npub, try to convert it
+  
   if (value.startsWith('npub1')) {
     return normalizePublicKey(value);
   }
   
-  // For usernames, we'd need a separate NIP-05 resolution service
-  // which isn't implemented here
+  
+  
   return null;
 };

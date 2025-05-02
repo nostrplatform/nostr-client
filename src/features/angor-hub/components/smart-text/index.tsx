@@ -9,7 +9,7 @@ interface SmartTextProps {
 }
 
 export const SmartText = ({ text, className = '' }: SmartTextProps) => {
-  // Parse the text and replace npubs and hashtags with components
+  
   const [parsedContent, setParsedContent] = useState<React.ReactNode[]>([]);
 
   useEffect(() => {
@@ -20,7 +20,7 @@ export const SmartText = ({ text, className = '' }: SmartTextProps) => {
       }
 
       try {
-        // Regular expressions for matching npubs and hashtags
+        
         const npubRegex = /npub1[a-zA-Z0-9]{58}/g;
         const hashtagRegex = /#[\p{L}0-9_]+/gu;
 
@@ -28,11 +28,11 @@ export const SmartText = ({ text, className = '' }: SmartTextProps) => {
         const contentParts: React.ReactNode[] = [];
         const matches: { index: number; length: number; node: React.ReactNode }[] = [];
 
-        // Find npub matches
+        
         let npubMatch;
         const textToSearch = text || '';
         
-        // Reset regex lastIndex
+        
         npubRegex.lastIndex = 0;
         
         while ((npubMatch = npubRegex.exec(textToSearch)) !== null) {
@@ -44,7 +44,7 @@ export const SmartText = ({ text, className = '' }: SmartTextProps) => {
           });
         }
 
-        // Find hashtag matches
+        
         let hashtagMatch;
         hashtagRegex.lastIndex = 0;
         
@@ -57,10 +57,10 @@ export const SmartText = ({ text, className = '' }: SmartTextProps) => {
           });
         }
 
-        // Sort matches by index
+        
         matches.sort((a, b) => a.index - b.index);
 
-        // Build the parsed content
+        
         for (const match of matches) {
           if (match.index > lastIndex) {
             contentParts.push(textToSearch.substring(lastIndex, match.index));
@@ -92,9 +92,9 @@ export const SmartText = ({ text, className = '' }: SmartTextProps) => {
   );
 };
 
-// Component for rendering npub links with names
+
 const NpubLink = ({ npub }: { npub: string }) => {
-  // Try to decode the npub to get the hex pubkey
+  
   let hexPubkey = '';
   try {
     const { type, data } = nip19.decode(npub);
@@ -103,14 +103,14 @@ const NpubLink = ({ npub }: { npub: string }) => {
     }
   } catch (e) {
     console.error('Invalid npub format:', npub);
-    // Return the original npub as text if we can't decode
+    
     return <span className="break-all">{npub}</span>;
   }
 
-  // Use the hook to fetch profile data for this pubkey
+  
   const { profile } = useRealtimeProfile(hexPubkey);
 
-  // If we have a profile, show the name, otherwise show shortened npub
+  
   const displayText = profile?.name || profile?.display_name || `${npub.slice(0, 5)}...${npub.slice(-3)}`;
 
   return (
@@ -123,7 +123,7 @@ const NpubLink = ({ npub }: { npub: string }) => {
   );
 };
 
-// Component for rendering hashtag links
+
 const HashtagLink = ({ hashtag }: { hashtag: string }) => {
   return (
     <Link 

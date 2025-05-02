@@ -29,7 +29,7 @@ export const useAngorHub = () => {
     
     setIsLoading(true);
     try {
-      // First fetch just to get total if needed
+      
       if (!isTotalFetched) {
         const countRes = await fetch(`${INDEXER_URL}api/query/Angor/projects?limit=1`);
         if (countRes.ok) {
@@ -38,14 +38,14 @@ export const useAngorHub = () => {
             const totalCount = parseInt(total, 10);
             setTotalProjects(totalCount);
             setIsTotalFetched(true);
-            // Update offset but don't trigger another fetch
+            
             currentOffset = Math.max(totalCount - LIMIT, 0);
             setOffset(currentOffset);
           }
         }
       }
 
-      // Main fetch with correct offset
+      
       const res = await fetch(
         `${INDEXER_URL}api/query/Angor/projects?limit=${LIMIT}&offset=${currentOffset}&sort=desc`
       );
@@ -54,7 +54,7 @@ export const useAngorHub = () => {
       const indexedProjects = await res.json() as IndexedProject[];
       const uniqueProjects = filterUniqueProjects(indexedProjects, projects || []);
       
-      // Check if we've reached the end
+      
       if (currentOffset === 0 || uniqueProjects.length === 0) {
         setHasMore(false);
       }
@@ -127,7 +127,7 @@ export const useAngorHub = () => {
   };
 };
 
-// Add a new hook for loading a single project
+
 export const useAngorProject = (projectId: string) => {
   const [project, setProject] = useState<IndexedProject | null | undefined>(undefined);
   const [stats, setStats] = useState<ProjectStats | null>(null);
@@ -140,7 +140,7 @@ export const useAngorProject = (projectId: string) => {
       
       setIsLoading(true);
       try {
-        // Fetch project from indexer
+        
         const res = await fetch(
           `${INDEXER_URL}api/query/Angor/projects/${projectId}`
         );
@@ -151,17 +151,17 @@ export const useAngorProject = (projectId: string) => {
         
         const indexedProject = await res.json() as IndexedProject;
         
-        // Fetch Nostr data
+        
         if (indexedProject.nostrEventId) {
           const nostrData = await nostrService.fetchProjectData(indexedProject.nostrEventId);
           
-          // Merge data
+          
           indexedProject.details = nostrData.details;
           indexedProject.content = nostrData.content;
           indexedProject.metadata = nostrData.metadata;
         }
         
-        // Fetch stats
+        
         const projectStats = await nostrService.fetchProjectStats(projectId);
         
         setProject(indexedProject);

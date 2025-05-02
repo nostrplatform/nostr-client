@@ -11,10 +11,10 @@ export const parseChunks = (content: string): Chunk[] => {
     /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/g;
   const nostrRegex = /(nostr:n[a-zA-Z0-9]+)/g;
 
-  // Store all matches with their positions
+  
   const matches: { type: Chunk['type']; content: string; index: number; fullLength: number }[] = [];
 
-  // Find all matches
+  
   let match: RegExpExecArray | null;
   while ((match = imageRegex.exec(content)) !== null) {
     matches.push({
@@ -88,7 +88,7 @@ export const parseChunks = (content: string): Chunk[] => {
     }
   }
   while ((match = urlRegex.exec(content)) !== null) {
-    // Only add URLs that haven't been matched by other patterns
+    
     if (!matches.some((m) => m.index === match?.index)) {
       matches.push({
         type: 'url',
@@ -99,13 +99,13 @@ export const parseChunks = (content: string): Chunk[] => {
     }
   }
 
-  // Sort matches by their index
+  
   matches.sort((a, b) => a.index - b.index);
 
-  // Process the content with matches
+  
   let lastIndex = 0;
   for (const match of matches) {
-    // Add text chunk before the match if there is any
+    
     if (match.index > lastIndex) {
       chunks.push({
         type: 'text',
@@ -113,17 +113,17 @@ export const parseChunks = (content: string): Chunk[] => {
       });
     }
 
-    // Add the match chunk
+    
     chunks.push({
       type: match.type,
       content: match.content,
     });
 
-    // Use fullLength for lastIndex update to properly handle nostr: prefix
+    
     lastIndex = match.index + match.fullLength;
   }
 
-  // Add remaining text after last match if any
+  
   if (lastIndex < content.length) {
     chunks.push({
       type: 'text',

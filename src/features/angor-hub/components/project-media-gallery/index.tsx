@@ -4,7 +4,7 @@ import { Button } from '@/shared/components/ui/button';
 import { ImageIcon, ExternalLinkIcon, PlayIcon } from 'lucide-react';
 import { Spinner } from '@/shared/components/spinner';
 
-// Define the media item interface
+
 interface MediaItem {
   url: string;
   type: 'image' | 'video' | string;
@@ -15,14 +15,14 @@ export const ProjectMediaGallery = ({ media }: { media?: MediaItem[] | string[] 
   const [validMediaItems, setValidMediaItems] = useState<MediaItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Process and normalize media data
+  
   useEffect(() => {
     console.log("Media received:", media);
     
     const processMediaItems = () => {
       setIsLoading(true);
       
-      // Handle empty or undefined media array
+      
       if (!media || !Array.isArray(media) || media.length === 0) {
         console.log("No valid media array found");
         setValidMediaItems([]);
@@ -30,20 +30,20 @@ export const ProjectMediaGallery = ({ media }: { media?: MediaItem[] | string[] 
         return;
       }
       
-      // Normalize all items to MediaItem format
+      
       const normalizedItems: MediaItem[] = media.map(item => {
-        // If item is already an object with url and type
+        
         if (typeof item === 'object' && item !== null && 'url' in item && 'type' in item) {
           return item as MediaItem;
         }
         
-        // If item is a string (URL), infer type from extension
+        
         if (typeof item === 'string') {
           const url = item;
           const extension = url.split('.').pop()?.toLowerCase();
-          let type = 'image'; // Default to image
+          let type = 'image'; 
           
-          // Simple media type detection based on file extension
+          
           if (['mp4', 'webm', 'ogg', 'mov'].includes(extension || '')) {
             type = 'video';
           }
@@ -51,14 +51,14 @@ export const ProjectMediaGallery = ({ media }: { media?: MediaItem[] | string[] 
           return { url, type };
         }
         
-        // If we can't determine the structure, skip this item
+        
         return null;
       }).filter(Boolean) as MediaItem[];
       
-      // Validate URLs
+      
       const validItems = normalizedItems.filter(item => {
         try {
-          // Basic URL validation
+          
           new URL(item.url);
           return true;
         } catch (e) {

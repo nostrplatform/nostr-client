@@ -29,7 +29,7 @@ export const UsersList = memo(() => {
       return [];
     }
 
-    // Create a map of pubkey to their latest message timestamp
+    
     const latestMessageMap = new Map<string, number>();
 
     events.forEach((event) => {
@@ -47,7 +47,7 @@ export const UsersList = memo(() => {
       }
     });
 
-    // Convert map to array and sort by timestamp
+    
     return Array.from(latestMessageMap.entries())
       .sort(([, timestampA], [, timestampB]) => timestampB - timestampA)
       .map(([pubkey]) => pubkey);

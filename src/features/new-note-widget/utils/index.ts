@@ -6,14 +6,14 @@
 export const highlightMentionsAndHashtags = (text: string): string => {
   if (!text) return '';
   
-  // Regular expressions for mentions and hashtags
+  
   const mentionRegex = /@([a-zA-Z0-9_.]+)/g;
   const hashtagRegex = /#([a-zA-Z0-9_]+)/g;
   
-  // Replace mentions with highlighted spans
+  
   let result = text.replace(mentionRegex, '<span class="text-blue-500">$&</span>');
   
-  // Replace hashtags with highlighted spans
+  
   result = result.replace(hashtagRegex, '<span class="text-green-500">$&</span>');
   
   return result;

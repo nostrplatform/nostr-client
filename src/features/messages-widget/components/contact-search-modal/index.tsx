@@ -30,7 +30,7 @@ export const ContactSearchModal = ({
   const [searchResults, setSearchResults] = useState<NDKUser[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Update query when searchQuery prop changes
+  
   useEffect(() => {
     if (searchQuery) {
       setQuery(searchQuery);
@@ -38,14 +38,14 @@ export const ContactSearchModal = ({
     }
   }, [searchQuery]);
 
-  // Filter contacts based on query
+  
   useEffect(() => {
     if (activeTab === "contacts") {
       setFilteredContacts(filterContacts(query));
     }
   }, [query, contacts, activeTab, filterContacts]);
 
-  // Handle search across network
+  
   useEffect(() => {
     const performSearch = async () => {
       if (activeTab === "search" && query.trim().length > 1) {
@@ -70,7 +70,7 @@ export const ContactSearchModal = ({
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    // Clear previous results when switching tabs
+    
     if (value === "search") {
       setSearchResults([]);
     }
@@ -79,9 +79,9 @@ export const ContactSearchModal = ({
   const handleSelectUser = (user: NDKUser) => {
     console.log('User selected in modal:', user);
     
-    // Make sure the user is properly passed to the onSelect handler
+    
     if (user && user.npub) {
-      // Pass the user object to parent component
+      
       onSelect(user);
       onClose();
     } else {

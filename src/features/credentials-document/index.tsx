@@ -41,14 +41,14 @@ const styles = StyleSheet.create({
   },
 });
 
-// Pre-generate QR codes synchronously before rendering the document
+
 const generateQRCodeSync = (value: string | null | undefined): string => {
   if (!value || typeof value !== 'string' || value.trim() === '') {
     return '';
   }
   
   try {
-    // Using canvas for synchronous generation
+    
     const canvas = document.createElement('canvas');
     QRCode.toCanvas(canvas, value, { 
       errorCorrectionLevel: 'H',
@@ -64,11 +64,11 @@ const generateQRCodeSync = (value: string | null | undefined): string => {
 };
 
 export const CredentialsDocument = ({ npub, nsec }: { npub?: string | null; nsec?: string | null }) => {
-  // Pre-generate QR codes immediately for PDF rendering
+  
   const npubQR = npub ? generateQRCodeSync(npub) : '';
   const nsecQR = nsec ? generateQRCodeSync(nsec) : '';
   
-  // Dynamic message based on available credentials
+  
   const getSecurityMessage = () => {
     const hasBoth = npub && nsec;
     const hasAny = npub || nsec;

@@ -7,7 +7,7 @@ export const renderContactCard = (user: NDKUser, onSelect: (user: NDKUser) => vo
   const displayName = profile.displayName || profile.name || user.npub?.slice(0, 8) + '...';
   const nip05 = profile.nip05;
   const verified = profile.nip05Verified;
-  // Fix image URL handling
+  
   const imageUrl = profile.image || profile.picture || '';
 
   return (

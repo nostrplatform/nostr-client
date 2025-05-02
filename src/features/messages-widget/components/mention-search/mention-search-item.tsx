@@ -16,7 +16,7 @@ export const MentionSearchItem = memo(
         try {
           const extractedProfile = profileFromEvent(event);
           
-          // Check NIP-05 validation if present
+          
           if (extractedProfile.nip05 && typeof extractedProfile.nip05 === 'string') {
             try {
               const validated = await event.author.validateNip05(extractedProfile.nip05);

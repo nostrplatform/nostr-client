@@ -27,7 +27,7 @@ export const NoteZapBtn = ({ event, inView }: { event: NDKEvent; inView: boolean
     return zapButton;
   }
 
-  // Removed NoteReactionsModal from here since it's now in the menu
+  
   return (
     <ZapWidget target={event}>
       <div onClick={(e: React.MouseEvent) => e.stopPropagation()}>

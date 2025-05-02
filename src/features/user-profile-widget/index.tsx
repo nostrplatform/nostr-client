@@ -50,8 +50,8 @@ export const UserProfileWidget = ({
             <div className="p-2">
               {view === 'notes' && <ProfileNotes user={user} notesOnly />}
               {view === 'replies' && <ProfileNotes user={user} repliesOnly />}
-              {view === 'badges' && <ProfileBadges user={user} />} {/* Render ProfileBadges */}
-              {/* {view === 'relays' && <>User Relays</>} */}
+              {view === 'badges' && <ProfileBadges user={user} />} 
+              
             </div>
           </>
         )}
