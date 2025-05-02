@@ -94,7 +94,7 @@ export const NewNoteWidget = ({ replyingToEvent }: { replyingToEvent?: NDKEvent 
     }
     
     
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     const newRecognition = new SpeechRecognition();
     
     newRecognition.lang = 'en-US';

@@ -27,7 +27,6 @@ import { parseBadgeAward, parseBadgeDefinition } from './utils';
 import { BadgeAwardItem } from './components/badge-award-item';
 import { Textarea } from '@/shared/components/ui/textarea';
 
-const BADGE_VISIBILITY_LIST_D_TAG = 'badge_visibility';
 const PROFILE_BADGES_KIND = 30008;
 const PROFILE_BADGES_D_TAG = 'profile_badges';
 
