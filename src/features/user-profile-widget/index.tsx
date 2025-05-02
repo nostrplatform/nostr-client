@@ -10,6 +10,7 @@ import {
   ProfileNotes,
   ProfileSummary,
   ProfileViewSwitcher,
+  ProfileBadges, 
 } from './components';
 
 import { useUserProfileWidget } from './hooks';
@@ -40,19 +41,17 @@ export const UserProfileWidget = ({
         ) : (
           <>
             <ProfileBanner banner={profile?.banner} />
-
             <ProfileAvatar image={profile?.image} />
-
             <ProfileActions targetUser={user} setEditMode={setEditMode} />
-
             <ProfileSummary user={user} profile={profile} />
 
             <ProfileViewSwitcher view={view} setView={setView} />
 
             <div className="p-2">
-              {view == 'notes' && <ProfileNotes user={user} notesOnly />}
-              {view == 'replies' && <ProfileNotes user={user} repliesOnly />}
-              {/* {view == 'relays' && <>User Relays</>} */}
+              {view === 'notes' && <ProfileNotes user={user} notesOnly />}
+              {view === 'replies' && <ProfileNotes user={user} repliesOnly />}
+              {view === 'badges' && <ProfileBadges user={user} />} {/* Render ProfileBadges */}
+              {/* {view === 'relays' && <>User Relays</>} */}
             </div>
           </>
         )}
