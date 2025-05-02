@@ -4,23 +4,21 @@ import { useState, useEffect, useMemo } from 'react';
 import { BadgeAward, BadgeDefinition } from '@/features/badges-widget/types';
 import { parseBadgeAward, parseBadgeDefinition } from '@/features/badges-widget/utils';
 
-
-const BADGE_VISIBILITY_LIST_D_TAG = 'badge_visibility'; 
+const PROFILE_BADGES_KIND = 30008;
+const PROFILE_BADGES_D_TAG = 'profile_badges';
 
 export const useProfileBadges = ({ user }: { user: NDKUser }) => {
   const { ndk } = useNdk();
   const profilePubkey = user.pubkey;
 
-  const [receivedBadgeEvents, setReceivedBadgeEvents] = useState<NDKEvent[]>([]); 
+  const [receivedBadgeEvents, setReceivedBadgeEvents] = useState<NDKEvent[]>([]);
   const [loadingReceivedBadges, setLoadingReceivedBadges] = useState<boolean>(true);
-  
-  const [visibilityListEvent, setVisibilityListEvent] = useState<NDKEvent | null>(null); 
-  const [loadingVisibilityList, setLoadingVisibilityList] = useState<boolean>(true); 
+  const [profileBadgesEvent, setProfileBadgesEvent] = useState<NDKEvent | null>(null);
+  const [loadingProfileBadges, setLoadingProfileBadges] = useState<boolean>(true);
   const [processedReceivedBadges, setProcessedReceivedBadges] = useState<BadgeAward[]>([]);
   const [badgeDefinitionsCache, setBadgeDefinitionsCache] = useState<Record<string, BadgeDefinition>>({});
   const [isLoadingBadgeDefs, setIsLoadingBadgeDefs] = useState(false);
 
-  
   useEffect(() => {
     if (!ndk || !profilePubkey) {
       setLoadingReceivedBadges(false);
@@ -31,56 +29,53 @@ export const useProfileBadges = ({ user }: { user: NDKUser }) => {
     const filter: NDKFilter = { kinds: [NDKKind.BadgeAward], '#p': [profilePubkey] };
     const sub = ndk.subscribe(filter, { closeOnEose: true });
     const events: NDKEvent[] = [];
-    sub.on('event', (event: NDKEvent) => { events.push(event); });
+    sub.on('event', (event: NDKEvent) => {
+      events.push(event);
+    });
     sub.on('eose', () => {
       setReceivedBadgeEvents(events);
       setLoadingReceivedBadges(false);
     });
-    return () => { sub.stop(); };
+    return () => {
+      sub.stop();
+    };
   }, [ndk, profilePubkey]);
 
-  
   useEffect(() => {
     if (!ndk || !profilePubkey) {
-      setLoadingVisibilityList(false); 
-      setVisibilityListEvent(null); 
+      setLoadingProfileBadges(false);
+      setProfileBadgesEvent(null);
       return;
     }
-    setLoadingVisibilityList(true); 
-    
+    setLoadingProfileBadges(true);
     const filter: NDKFilter = {
-        kinds: [NDKKind.BookmarkList], 
-        authors: [profilePubkey],
-        '#d': [BADGE_VISIBILITY_LIST_D_TAG], 
-        limit: 1 
+      kinds: [PROFILE_BADGES_KIND],
+      authors: [profilePubkey],
+      '#d': [PROFILE_BADGES_D_TAG],
+      limit: 1,
     };
     let latestEvent: NDKEvent | null = null;
 
-    const sub = ndk.subscribe(filter, { closeOnEose: false }); 
+    const sub = ndk.subscribe(filter, { closeOnEose: false });
 
     sub.on('event', (event: NDKEvent) => {
-        
-        if (!latestEvent || event.created_at! > latestEvent.created_at!) {
-            latestEvent = event;
-            setVisibilityListEvent(latestEvent); 
-        }
-    });
-     sub.on('eose', () => {
-      
-      if (!latestEvent) {
-        setVisibilityListEvent(null); 
+      if (!latestEvent || event.created_at! > latestEvent.created_at!) {
+        latestEvent = event;
+        setProfileBadgesEvent(latestEvent);
       }
-      setLoadingVisibilityList(false); 
     });
-
-    
+    sub.on('eose', () => {
+      if (!latestEvent) {
+        setProfileBadgesEvent(null);
+      }
+      setLoadingProfileBadges(false);
+    });
 
     return () => {
-        sub.stop();
+      sub.stop();
     };
   }, [ndk, profilePubkey]);
 
-  
   useEffect(() => {
     const processBadges = async (
       events: NDKEvent[],
@@ -92,71 +87,75 @@ export const useProfileBadges = ({ user }: { user: NDKUser }) => {
         .filter((award): award is BadgeAward => award !== null);
 
       const definitionCoords = new Set<string>();
-      parsedAwards.forEach(award => {
-        
+      parsedAwards.forEach((award) => {
         if (award.definitionEventId && !currentCache[award.definitionEventId]) {
           definitionCoords.add(award.definitionEventId);
         }
       });
 
-      
       if (definitionCoords.size > 0 && ndk) {
         setIsLoadingBadgeDefs(true);
         try {
-          
-          const filters = Array.from(definitionCoords).map(coord => {
+          const filters = Array.from(definitionCoords).map((coord) => {
             const [kind, pubkey, d] = coord.split(':');
             return {
-              kinds: [parseInt(kind)], 
+              kinds: [parseInt(kind)],
               authors: [pubkey],
               '#d': [d],
-              limit: 1, 
+              limit: 1,
             };
           });
           const fetchedDefs = await ndk.fetchEvents(filters);
           const newCacheEntries: Record<string, BadgeDefinition> = {};
-          fetchedDefs.forEach(event => {
+          fetchedDefs.forEach((event) => {
             const def = parseBadgeDefinition(event);
             if (def) {
-              
               const coord = `${NDKKind.BadgeDefinition}:${def.pubkey}:${def.d}`;
               newCacheEntries[coord] = def;
             }
           });
-          
-          setBadgeDefinitionsCache(prev => ({ ...prev, ...newCacheEntries }));
+          setBadgeDefinitionsCache((prev) => ({ ...prev, ...newCacheEntries }));
         } catch (error) {
-          console.error("Error fetching badge definitions for profile awards:", error);
+          console.error('Error fetching badge definitions for profile awards:', error);
         } finally {
           setIsLoadingBadgeDefs(false);
         }
       }
 
-      
       setter(parsedAwards.sort((a, b) => b.awardedAt - a.awardedAt));
     };
 
-    
     processBadges(receivedBadgeEvents, setProcessedReceivedBadges, badgeDefinitionsCache);
-
   }, [receivedBadgeEvents, ndk, badgeDefinitionsCache]);
 
-  
   const publiclyVisibleBadges = useMemo(() => {
-    if (!visibilityListEvent) { 
-        return []; 
+    if (!profileBadgesEvent) {
+      return [];
     }
-    
-    const visibleAwardIds = new Set( 
-      visibilityListEvent.tags.filter(t => t[0] === 'e' && t[1]).map(t => t[1])
-    );
-    
-    return processedReceivedBadges.filter(award => visibleAwardIds.has(award.id));
-  }, [processedReceivedBadges, visibilityListEvent]); 
 
-  
-  const isLoading = loadingReceivedBadges || loadingVisibilityList || isLoadingBadgeDefs; 
+    const visibleAwardIds = new Set<string>();
+    const tags = profileBadgesEvent.tags;
+    for (let i = 0; i < tags.length - 1; i++) {
+      if (tags[i][0] === 'a' && tags[i + 1][0] === 'e' && tags[i + 1][1]) {
+        visibleAwardIds.add(tags[i + 1][1]);
+        i++;
+      }
+    }
 
-  
+    const orderedVisibleBadges: BadgeAward[] = [];
+    const receivedBadgesMap = new Map(processedReceivedBadges.map((b) => [b.id, b]));
+
+    visibleAwardIds.forEach((awardId) => {
+      const badge = receivedBadgesMap.get(awardId);
+      if (badge) {
+        orderedVisibleBadges.push(badge);
+      }
+    });
+
+    return orderedVisibleBadges;
+  }, [processedReceivedBadges, profileBadgesEvent]);
+
+  const isLoading = loadingReceivedBadges || loadingProfileBadges || isLoadingBadgeDefs;
+
   return { publiclyVisibleBadges, badgeDefinitionsCache, isLoading };
 };

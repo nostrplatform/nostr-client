@@ -28,6 +28,8 @@ import { BadgeAwardItem } from './components/badge-award-item';
 import { Textarea } from '@/shared/components/ui/textarea';
 
 const BADGE_VISIBILITY_LIST_D_TAG = 'badge_visibility';
+const PROFILE_BADGES_KIND = 30008;
+const PROFILE_BADGES_D_TAG = 'profile_badges';
 
 export const BadgesWidget = () => {
   const { ndk } = useNdk();
@@ -49,8 +51,8 @@ export const BadgesWidget = () => {
   const [loadingAwarded, setLoadingAwarded] = useState<boolean>(true);
   const [receivedEvents, setReceivedEvents] = useState<NDKEvent[]>([]);
   const [loadingReceived, setLoadingReceived] = useState<boolean>(true);
-  const [acceptanceListEvent, setAcceptanceListEvent] = useState<NDKEvent | null>(null);
-  const [loadingAcceptance, setLoadingAcceptance] = useState<boolean>(true);
+  const [profileBadgesEvent, setProfileBadgesEvent] = useState<NDKEvent | null>(null);
+  const [loadingProfileBadges, setLoadingProfileBadges] = useState<boolean>(true);
 
   const [processedDefinitions, setProcessedDefinitions] = useState<BadgeDefinition[]>([]);
   const [processedAwardedBadges, setProcessedAwardedBadges] = useState<BadgeAward[]>([]);
@@ -58,10 +60,21 @@ export const BadgesWidget = () => {
   const [badgeDefinitionsCache, setBadgeDefinitionsCache] = useState<Record<string, BadgeDefinition>>({});
   const [isLoadingBadgeDefs, setIsLoadingBadgeDefs] = useState(false);
 
-  const visibleBadgeAwardIds = useMemo(() => {
-    if (!acceptanceListEvent) return new Set<string>();
-    return new Set(acceptanceListEvent.tags.filter(t => t[0] === 'e' && t[1]).map(t => t[1]));
-  }, [acceptanceListEvent]);
+  const visibleBadgeAwardsMap = useMemo(() => {
+    const map = new Map<string, string>();
+    if (!profileBadgesEvent) return map;
+
+    const tags = profileBadgesEvent.tags;
+    for (let i = 0; i < tags.length - 1; i++) {
+      if (tags[i][0] === 'a' && tags[i + 1][0] === 'e' && tags[i][1] && tags[i + 1][1]) {
+        const definitionCoord = tags[i][1];
+        const awardId = tags[i + 1][1];
+        map.set(awardId, definitionCoord);
+        i++;
+      }
+    }
+    return map;
+  }, [profileBadgesEvent]);
 
   const badgeTypeAwardCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -129,15 +142,15 @@ export const BadgesWidget = () => {
 
   useEffect(() => {
     if (!ndk || !pubkey) {
-      setLoadingAcceptance(false);
-      setAcceptanceListEvent(null);
+      setLoadingProfileBadges(false);
+      setProfileBadgesEvent(null);
       return;
     }
-    setLoadingAcceptance(true);
+    setLoadingProfileBadges(true);
     const filter: NDKFilter = {
-      kinds: [NDKKind.BookmarkList],
+      kinds: [PROFILE_BADGES_KIND],
       authors: [pubkey],
-      '#d': [BADGE_VISIBILITY_LIST_D_TAG],
+      '#d': [PROFILE_BADGES_D_TAG],
       limit: 1
     };
     let latestEvent: NDKEvent | null = null;
@@ -147,14 +160,14 @@ export const BadgesWidget = () => {
     sub.on('event', (event: NDKEvent) => {
       if (!latestEvent || event.created_at! > latestEvent.created_at!) {
         latestEvent = event;
-        setAcceptanceListEvent(latestEvent);
+        setProfileBadgesEvent(latestEvent);
       }
     });
     sub.on('eose', () => {
       if (!latestEvent) {
-        setAcceptanceListEvent(null);
+        setProfileBadgesEvent(null);
       }
-      setLoadingAcceptance(false);
+      setLoadingProfileBadges(false);
     });
 
     return () => {
@@ -340,35 +353,40 @@ export const BadgesWidget = () => {
   }, [ndk, pubkey, selectedDefinition, awardRecipientNpub, toast]);
 
   const handleToggleVisibility = useCallback(async (award: BadgeAward) => {
-    if (!ndk || !pubkey || !award?.id) return;
+    if (!ndk || !pubkey || !award?.id || !award.definitionEventId) return;
 
     const awardId = award.id;
+    const definitionCoord = award.definitionEventId;
+
     setIsTogglingVisibility(prev => ({ ...prev, [awardId]: true }));
 
     try {
-      const currentVisibleIds = new Set(visibleBadgeAwardIds);
-      const isCurrentlyVisible = currentVisibleIds.has(awardId);
+      const currentVisibleMap = new Map(visibleBadgeAwardsMap);
+      const isCurrentlyVisible = currentVisibleMap.has(awardId);
 
-      let updatedVisibleIds: Set<string>;
+      let updatedVisibleMap: Map<string, string>;
 
       if (isCurrentlyVisible) {
-        updatedVisibleIds = new Set(currentVisibleIds);
-        updatedVisibleIds.delete(awardId);
-        toast({ title: 'Hiding Badge...', description: 'Updating visibility list...' });
+        updatedVisibleMap = new Map(currentVisibleMap);
+        updatedVisibleMap.delete(awardId);
+        toast({ title: 'Hiding Badge...', description: 'Updating profile badges list...' });
       } else {
-        updatedVisibleIds = new Set(currentVisibleIds);
-        updatedVisibleIds.add(awardId);
-        toast({ title: 'Making Badge Visible...', description: 'Updating visibility list...' });
+        updatedVisibleMap = new Map(currentVisibleMap);
+        updatedVisibleMap.set(awardId, definitionCoord);
+        toast({ title: 'Making Badge Visible...', description: 'Updating profile badges list...' });
       }
 
       const newListEvent = new NDKEvent(ndk);
-      newListEvent.kind = NDKKind.BookmarkList;
+      newListEvent.kind = PROFILE_BADGES_KIND;
       newListEvent.pubkey = pubkey;
       newListEvent.created_at = Math.floor(Date.now() / 1000);
       newListEvent.content = '';
 
-      const tags: NDKTag[] = [['d', BADGE_VISIBILITY_LIST_D_TAG]];
-      updatedVisibleIds.forEach(id => tags.push(['e', id]));
+      const tags: NDKTag[] = [['d', PROFILE_BADGES_D_TAG]];
+      updatedVisibleMap.forEach((defCoord, awardId) => {
+        tags.push(['a', defCoord]);
+        tags.push(['e', awardId]);
+      });
       newListEvent.tags = tags;
 
       await newListEvent.sign();
@@ -377,11 +395,11 @@ export const BadgesWidget = () => {
       if (publishedRelays.size > 0) {
         toast({
           title: isCurrentlyVisible ? 'Badge Hidden' : 'Badge Visible',
-          description: 'Your public badge visibility list has been updated.',
+          description: 'Your profile badges list has been updated.',
         });
-        setAcceptanceListEvent(newListEvent);
+        setProfileBadgesEvent(newListEvent);
       } else {
-        throw new Error('Failed to publish visibility list update to any relay.');
+        throw new Error('Failed to publish profile badges list update to any relay.');
       }
     } catch (error: any) {
       console.error("Failed to update badge visibility:", error);
@@ -393,9 +411,9 @@ export const BadgesWidget = () => {
     } finally {
       setIsTogglingVisibility(prev => ({ ...prev, [awardId]: false }));
     }
-  }, [ndk, pubkey, toast, visibleBadgeAwardIds]);
+  }, [ndk, pubkey, toast, visibleBadgeAwardsMap]);
 
-  const isLoading = loadingDefs || loadingAwarded || loadingReceived || loadingAcceptance || isLoadingBadgeDefs;
+  const isLoading = loadingDefs || loadingAwarded || loadingReceived || loadingProfileBadges || isLoadingBadgeDefs;
 
   if (!pubkey) {
     return (
@@ -503,7 +521,7 @@ export const BadgesWidget = () => {
             <CardContent className="space-y-4">
               {isLoading ? renderLoading() : processedReceivedBadges.length > 0 ? (
                 processedReceivedBadges.map((award) => {
-                  const isVisible = visibleBadgeAwardIds.has(award.id);
+                  const isVisible = visibleBadgeAwardsMap.has(award.id);
                   const isToggling = isTogglingVisibility[award.id] ?? false;
                   return (
                     <div key={award.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-3 border border-border rounded-lg bg-card">
@@ -522,7 +540,7 @@ export const BadgesWidget = () => {
                           id={`visibility-toggle-${award.id}`}
                           checked={isVisible}
                           onCheckedChange={() => handleToggleVisibility(award)}
-                          disabled={isToggling}
+                          disabled={isToggling || !award.definitionEventId}
                           aria-label="Toggle badge visibility"
                         />
                         {isToggling && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}

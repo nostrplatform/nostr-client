@@ -87,7 +87,7 @@ export const NoteHeader = ({
                   Show reactions
                 </DropdownMenuItem>
 
-                <DropdownMenuItem onClick={() => }>
+                <DropdownMenuItem onClick={() => {/* Handle repost */}}>
                   <HeartIcon className="w-4 h-4 mr-2" />
                   Repost
                 </DropdownMenuItem>
