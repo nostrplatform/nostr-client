@@ -8,7 +8,7 @@ import { useProfileBadges } from './hooks';
 
 export const ProfileBadges = memo(
   ({ user }: { user: NDKUser }) => {
-    // Use the filtered list from the hook
+    // Use the filtered list (publicly visible badges) from the hook
     const { publiclyVisibleBadges, badgeDefinitionsCache, isLoading } = useProfileBadges({ user });
 
     if (isLoading) {
@@ -21,19 +21,21 @@ export const ProfileBadges = memo(
 
     return (
       <>
-        <div className="flex flex-col gap-2">
-          {/* Render the filtered list */}
+        {/* Add spacing around the list */}
+        <div className="flex flex-col gap-3 p-2 md:p-0"> {/* Removed outer padding for profile page context */}
+          {/* Render the filtered list of publicly visible badges */}
           {publiclyVisibleBadges.length > 0 ? (
             publiclyVisibleBadges.map((award) => (
               <BadgeAwardItem
                 key={award.id}
                 award={award}
-                perspective="recipient"
+                perspective="recipient" // Always recipient perspective on profile page
                 definition={badgeDefinitionsCache[award.definitionEventId || '']}
               />
             ))
           ) : (
-            <p className="text-muted-foreground text-center p-4">This user hasn't accepted any badges yet.</p> // Updated message
+            // Updated message for clarity and theme
+            <p className="text-muted-foreground text-center p-6">This user hasn't made any badges publicly visible yet.</p>
           )}
         </div>
         {/* Add Load More functionality if needed later */}

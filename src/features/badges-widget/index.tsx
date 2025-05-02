@@ -19,6 +19,7 @@ import { Label } from '@/shared/components/ui/label';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
 import { Spinner } from '@/shared/components/spinner';
 import { Switch } from '@/shared/components/ui/switch';
 import { BadgeAward, BadgeDefinition } from './types';
@@ -26,7 +27,7 @@ import { parseBadgeAward, parseBadgeDefinition } from './utils';
 import { BadgeAwardItem } from './components/badge-award-item';
 import { Textarea } from '@/shared/components/ui/textarea';
 
-const BADGE_ACCEPTANCE_LIST_D_TAG = 'badge_acceptances';
+const BADGE_VISIBILITY_LIST_D_TAG = 'badge_visibility';
 
 export const BadgesWidget = () => {
   const { ndk } = useNdk();
@@ -38,7 +39,7 @@ export const BadgesWidget = () => {
   const [awardRecipientNpub, setAwardRecipientNpub] = useState('');
   const [isPublishingDef, setIsPublishingDef] = useState(false);
   const [isPublishingAward, setIsPublishingAward] = useState(false);
-  const [isTogglingAcceptance, setIsTogglingAcceptance] = useState<Record<string, boolean>>({});
+  const [isTogglingVisibility, setIsTogglingVisibility] = useState<Record<string, boolean>>({});
 
   const pubkey = activeUser?.pubkey;
 
@@ -57,12 +58,12 @@ export const BadgesWidget = () => {
   const [badgeDefinitionsCache, setBadgeDefinitionsCache] = useState<Record<string, BadgeDefinition>>({});
   const [isLoadingBadgeDefs, setIsLoadingBadgeDefs] = useState(false);
 
-  const acceptedBadgeAwardIds = useMemo(() => {
+  const visibleBadgeAwardIds = useMemo(() => {
     if (!acceptanceListEvent) return new Set<string>();
     return new Set(acceptanceListEvent.tags.filter(t => t[0] === 'e' && t[1]).map(t => t[1]));
   }, [acceptanceListEvent]);
 
-  const definitionAwardCounts = useMemo(() => {
+  const badgeTypeAwardCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     processedAwardedBadges.forEach(award => {
       if (award.definitionEventId) {
@@ -136,7 +137,7 @@ export const BadgesWidget = () => {
     const filter: NDKFilter = {
       kinds: [NDKKind.BookmarkList],
       authors: [pubkey],
-      '#d': [BADGE_ACCEPTANCE_LIST_D_TAG],
+      '#d': [BADGE_VISIBILITY_LIST_D_TAG],
       limit: 1
     };
     let latestEvent: NDKEvent | null = null;
@@ -236,7 +237,7 @@ export const BadgesWidget = () => {
     const uniqueId = formData.get('uniqueId') as string;
 
     if (!name || !uniqueId) {
-      toast({ title: 'Missing required fields', description: 'Name and Unique ID are required.', variant: 'destructive' });
+      toast({ title: 'Missing Required Fields', description: 'Name and Unique ID are required for a badge type.', variant: 'destructive' });
       setIsPublishingDef(false);
       return;
     }
@@ -262,15 +263,15 @@ export const BadgesWidget = () => {
       const publishedRelays = await definitionEvent.publish();
 
       if (publishedRelays.size > 0) {
-        toast({ title: 'Badge Definition Created', description: `Published to ${publishedRelays.size} relays.` });
+        toast({ title: 'Badge Created', description: `Published to ${publishedRelays.size} relays.` });
         setCreateDefOpen(false);
         setDefinitionEvents(prev => [...prev, definitionEvent]);
       } else {
-        throw new Error('Failed to publish definition to any relay.');
+        throw new Error('Failed to publish badge type definition to any relay.');
       }
     } catch (error: any) {
-      console.error("Failed to create badge definition:", error);
-      toast({ title: 'Error Creating Definition', description: error.message || 'Please try again.', variant: 'destructive' });
+      console.error("Failed to create badge type definition:", error);
+      toast({ title: 'Error Creating Badge', description: error.message || 'Please try again.', variant: 'destructive' });
     } finally {
       setIsPublishingDef(false);
     }
@@ -324,40 +325,40 @@ export const BadgesWidget = () => {
       const publishedRelays = await awardEvent.publish();
 
       if (publishedRelays.size > 0) {
-        toast({ title: 'Badge Awarded!', description: `Published to ${publishedRelays.size} relays.` });
+        toast({ title: 'Badge Given!', description: `Published to ${publishedRelays.size} relays.` });
         setAwardBadgeOpen(false);
         setAwardedEvents(prev => [...prev, awardEvent]);
       } else {
-        throw new Error('Failed to publish award to any relay.');
+        throw new Error('Failed to publish badge award to any relay.');
       }
     } catch (error: any) {
-      console.error("Failed to award badge:", error);
-      toast({ title: 'Error Awarding Badge', description: error.message || 'Please try again.', variant: 'destructive' });
+      console.error("Failed to give badge:", error);
+      toast({ title: 'Error Giving Badge', description: error.message || 'Please try again.', variant: 'destructive' });
     } finally {
       setIsPublishingAward(false);
     }
   }, [ndk, pubkey, selectedDefinition, awardRecipientNpub, toast]);
 
-  const handleToggleAcceptance = useCallback(async (award: BadgeAward) => {
+  const handleToggleVisibility = useCallback(async (award: BadgeAward) => {
     if (!ndk || !pubkey || !award?.id) return;
 
     const awardId = award.id;
-    setIsTogglingAcceptance(prev => ({ ...prev, [awardId]: true }));
+    setIsTogglingVisibility(prev => ({ ...prev, [awardId]: true }));
 
     try {
-      const currentAcceptedIds = new Set(acceptedBadgeAwardIds);
-      const isCurrentlyAccepted = currentAcceptedIds.has(awardId);
+      const currentVisibleIds = new Set(visibleBadgeAwardIds);
+      const isCurrentlyVisible = currentVisibleIds.has(awardId);
 
-      let updatedAcceptedIds: Set<string>;
+      let updatedVisibleIds: Set<string>;
 
-      if (isCurrentlyAccepted) {
-        updatedAcceptedIds = new Set(currentAcceptedIds);
-        updatedAcceptedIds.delete(awardId);
-        toast({ title: 'Hiding Badge...', description: 'Updating acceptance list...' });
+      if (isCurrentlyVisible) {
+        updatedVisibleIds = new Set(currentVisibleIds);
+        updatedVisibleIds.delete(awardId);
+        toast({ title: 'Hiding Badge...', description: 'Updating visibility list...' });
       } else {
-        updatedAcceptedIds = new Set(currentAcceptedIds);
-        updatedAcceptedIds.add(awardId);
-        toast({ title: 'Accepting Badge...', description: 'Updating acceptance list...' });
+        updatedVisibleIds = new Set(currentVisibleIds);
+        updatedVisibleIds.add(awardId);
+        toast({ title: 'Making Badge Visible...', description: 'Updating visibility list...' });
       }
 
       const newListEvent = new NDKEvent(ndk);
@@ -366,8 +367,8 @@ export const BadgesWidget = () => {
       newListEvent.created_at = Math.floor(Date.now() / 1000);
       newListEvent.content = '';
 
-      const tags: NDKTag[] = [['d', BADGE_ACCEPTANCE_LIST_D_TAG]];
-      updatedAcceptedIds.forEach(id => tags.push(['e', id]));
+      const tags: NDKTag[] = [['d', BADGE_VISIBILITY_LIST_D_TAG]];
+      updatedVisibleIds.forEach(id => tags.push(['e', id]));
       newListEvent.tags = tags;
 
       await newListEvent.sign();
@@ -375,24 +376,24 @@ export const BadgesWidget = () => {
 
       if (publishedRelays.size > 0) {
         toast({
-          title: isCurrentlyAccepted ? 'Badge Hidden' : 'Badge Accepted',
-          description: 'Your public badge list has been updated.',
+          title: isCurrentlyVisible ? 'Badge Hidden' : 'Badge Visible',
+          description: 'Your public badge visibility list has been updated.',
         });
         setAcceptanceListEvent(newListEvent);
       } else {
-        throw new Error('Failed to publish acceptance list update to any relay.');
+        throw new Error('Failed to publish visibility list update to any relay.');
       }
     } catch (error: any) {
-      console.error("Failed to update acceptance list:", error);
+      console.error("Failed to update badge visibility:", error);
       toast({
-        title: 'Error Updating Acceptance',
+        title: 'Error Updating Visibility',
         description: error.message || 'Please try again.',
         variant: 'destructive',
       });
     } finally {
-      setIsTogglingAcceptance(prev => ({ ...prev, [awardId]: false }));
+      setIsTogglingVisibility(prev => ({ ...prev, [awardId]: false }));
     }
-  }, [ndk, pubkey, toast, acceptedBadgeAwardIds]);
+  }, [ndk, pubkey, toast, visibleBadgeAwardIds]);
 
   const isLoading = loadingDefs || loadingAwarded || loadingReceived || loadingAcceptance || isLoadingBadgeDefs;
 
@@ -409,46 +410,46 @@ export const BadgesWidget = () => {
   );
 
   return (
-    <div className="p-4 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="p-4 md:p-6 space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl font-bold">Manage Badges</h1>
         <Dialog open={createDefOpen} onOpenChange={setCreateDefOpen}>
           <DialogTrigger asChild>
             <Button>
-              <PlusIcon className="w-4 h-4 mr-2" /> Create Definition
+              <PlusIcon className="w-4 h-4 mr-2" /> Create Badge
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Create New Badge Definition</DialogTitle>
-              <DialogDescription>Define a new badge that you can award to others.</DialogDescription>
+              <DialogTitle>Create New Badge</DialogTitle>
+              <DialogDescription>Define a new type of badge that you can give to others.</DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleCreateDefinition} className="space-y-4">
+            <form onSubmit={handleCreateDefinition} className="space-y-4 py-4">
               <div>
                 <Label htmlFor="uniqueId">Unique ID (d tag) *</Label>
-                <Input id="uniqueId" name="uniqueId" required placeholder="e.g., awesome-developer-award-2025" />
-                <p className="text-xs text-muted-foreground mt-1">A unique identifier for this badge definition.</p>
+                <Input id="uniqueId" name="uniqueId" required placeholder="e.g., awesome-developer-award-2025" className="mt-1" />
+                <p className="text-xs text-muted-foreground mt-1">A unique identifier for this badge type (required).</p>
               </div>
               <div>
                 <Label htmlFor="name">Name *</Label>
-                <Input id="name" name="name" required placeholder="e.g., Awesome Developer" />
+                <Input id="name" name="name" required placeholder="e.g., Awesome Developer" className="mt-1" />
               </div>
               <div>
                 <Label htmlFor="description">Description</Label>
-                <Textarea id="description" name="description" placeholder="e.g., Awarded for significant contributions..." />
+                <Textarea id="description" name="description" placeholder="e.g., Awarded for significant contributions..." className="mt-1" />
               </div>
               <div>
                 <Label htmlFor="image">Image URL</Label>
-                <Input id="image" name="image" type="url" placeholder="https://example.com/badge.png" />
+                <Input id="image" name="image" type="url" placeholder="https://example.com/badge.png" className="mt-1" />
               </div>
               <div>
                 <Label htmlFor="thumb">Thumbnail URL</Label>
-                <Input id="thumb" name="thumb" type="url" placeholder="https://example.com/badge_thumb.png" />
+                <Input id="thumb" name="thumb" type="url" placeholder="https://example.com/badge_thumb.png" className="mt-1" />
               </div>
               <DialogFooter>
                 <Button type="submit" disabled={isPublishingDef}>
                   {isPublishingDef && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Create Definition
+                  Create Badge
                 </Button>
               </DialogFooter>
             </form>
@@ -457,11 +458,11 @@ export const BadgesWidget = () => {
       </div>
 
       <Dialog open={awardBadgeOpen} onOpenChange={setAwardBadgeOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Award Badge: {selectedDefinition?.name}</DialogTitle>
+            <DialogTitle>Give Badge: {selectedDefinition?.name}</DialogTitle>
             <DialogDescription>
-              Award this badge to a user by entering their npub.
+              Give this badge to a user by entering their npub.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -473,53 +474,54 @@ export const BadgesWidget = () => {
                 onChange={(e) => setAwardRecipientNpub(e.target.value)}
                 placeholder="npub1..."
                 required
+                className="mt-1"
               />
             </div>
           </div>
           <DialogFooter>
             <Button onClick={handleAwardBadge} disabled={isPublishingAward}>
               {isPublishingAward && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Award Badge
+              Give Badge
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Tabs defaultValue="earned">
+      <Tabs defaultValue="received" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="earned">Earned</TabsTrigger>
+          <TabsTrigger value="received">Received</TabsTrigger>
           <TabsTrigger value="given">Given</TabsTrigger>
-          <TabsTrigger value="definitions">My Definitions</TabsTrigger>
+          <TabsTrigger value="definitions">My Badges</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="earned" className="mt-4">
+        <TabsContent value="received" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Earned Badges</CardTitle>
+              <CardTitle>Received Badges</CardTitle>
               <CardDescription>Badges you have received. Toggle visibility for your public profile.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {isLoading ? renderLoading() : processedReceivedBadges.length > 0 ? (
                 processedReceivedBadges.map((award) => {
-                  const isAccepted = acceptedBadgeAwardIds.has(award.id);
-                  const isToggling = isTogglingAcceptance[award.id] ?? false;
+                  const isVisible = visibleBadgeAwardIds.has(award.id);
+                  const isToggling = isTogglingVisibility[award.id] ?? false;
                   return (
-                    <div key={award.id} className="flex items-center justify-between gap-4 p-2 border rounded">
-                      <div className="flex-grow">
+                    <div key={award.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-3 border border-border rounded-lg bg-card">
+                      <div className="flex-grow w-full sm:w-auto">
                         <BadgeAwardItem
                           award={award}
                           perspective="recipient"
                           definition={badgeDefinitionsCache[award.definitionEventId || '']}
                         />
                       </div>
-                      <div className="flex items-center space-x-2 flex-shrink-0 pl-4">
-                        <Label htmlFor={`accept-toggle-${award.id}`} className="text-xs text-muted-foreground cursor-pointer">
-                          {isAccepted ? 'Visible' : 'Hidden'}
+                      <div className="flex items-center space-x-2 flex-shrink-0 pl-0 sm:pl-4 pt-2 sm:pt-0 border-t sm:border-t-0 sm:border-l border-border w-full sm:w-auto justify-end sm:justify-start">
+                        <Label htmlFor={`visibility-toggle-${award.id}`} className="text-xs text-muted-foreground cursor-pointer select-none">
+                          {isVisible ? 'Visible' : 'Hidden'}
                         </Label>
                         <Switch
-                          id={`accept-toggle-${award.id}`}
-                          checked={isAccepted}
-                          onCheckedChange={() => handleToggleAcceptance(award)}
+                          id={`visibility-toggle-${award.id}`}
+                          checked={isVisible}
+                          onCheckedChange={() => handleToggleVisibility(award)}
                           disabled={isToggling}
                           aria-label="Toggle badge visibility"
                         />
@@ -529,17 +531,17 @@ export const BadgesWidget = () => {
                   );
                 })
               ) : (
-                <p className="text-muted-foreground text-center">You haven't earned any badges yet.</p>
+                <p className="text-muted-foreground text-center py-4">You haven't received any badges yet.</p>
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="given" className="mt-4">
+        <TabsContent value="given" className="mt-6">
           <Card>
             <CardHeader>
               <CardTitle>Given Badges</CardTitle>
-              <CardDescription>Badges you have awarded to others.</CardDescription>
+              <CardDescription>Badges you have given to others.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {isLoading ? renderLoading() : processedAwardedBadges.length > 0 ? (
@@ -552,43 +554,50 @@ export const BadgesWidget = () => {
                   />
                 ))
               ) : (
-                <p className="text-muted-foreground text-center">You haven't awarded any badges yet.</p>
+                <p className="text-muted-foreground text-center py-4">You haven't given any badges yet.</p>
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="definitions" className="mt-4">
+        <TabsContent value="definitions" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>My Badge Definitions</CardTitle>
-              <CardDescription>Badges you have created and can award.</CardDescription>
+              <CardTitle>My Badges</CardTitle>
+              <CardDescription>Badge types you have created and can give.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {isLoading ? renderLoading() : processedDefinitions.length > 0 ? (
                 processedDefinitions.map((def) => {
                   const definitionCoord = `${NDKKind.BadgeDefinition}:${def.pubkey}:${def.d}`;
-                  const awardCount = definitionAwardCounts[definitionCoord] || 0;
+                  const awardCount = badgeTypeAwardCounts[definitionCoord] || 0;
                   return (
-                    <div key={def.id} className="p-3 border rounded flex justify-between items-center gap-4">
-                      <div className="flex-grow">
-                        <p className="font-semibold">{def.name}</p>
-                        <p className="text-sm text-muted-foreground">{def.description}</p>
-                        {def.image && <img src={def.image} alt={def.name} className="w-10 h-10 mt-2 rounded object-cover" />}
+                    <div key={def.id} className="p-4 border border-border rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card">
+                      <div className="flex items-center gap-4 flex-grow">
+                        {(def.thumb || def.image) && (
+                          <Avatar className="w-12 h-12 hidden sm:flex flex-shrink-0">
+                            <AvatarImage src={def.thumb || def.image} alt={def.name} />
+                            <AvatarFallback><AwardIcon className="w-6 h-6 text-muted-foreground" /></AvatarFallback>
+                          </Avatar>
+                        )}
+                        <div className="overflow-hidden">
+                          <p className="font-semibold text-base">{def.name}</p>
+                          <p className="text-sm text-muted-foreground mt-1">{def.description}</p>
+                        </div>
                       </div>
-                      <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                      <div className="flex flex-col items-start sm:items-end gap-2 flex-shrink-0 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 sm:border-l-0 border-border">
                         <Button size="sm" onClick={() => openAwardDialog(def)}>
-                          <AwardIcon className="w-3 h-3 mr-1.5" /> Award
+                          <AwardIcon className="w-3 h-3 mr-1.5" /> Give Badge
                         </Button>
-                        <span className="text-xs text-muted-foreground">
-                          Awarded {awardCount} time{awardCount !== 1 ? 's' : ''}
+                        <span className="text-xs text-muted-foreground pt-1 sm:pt-0">
+                          Given {awardCount} time{awardCount !== 1 ? 's' : ''}
                         </span>
                       </div>
                     </div>
                   );
                 })
               ) : (
-                <p className="text-muted-foreground text-center">You haven't created any badge definitions yet.</p>
+                <p className="text-muted-foreground text-center py-4">You haven't created any badge types yet.</p>
               )}
             </CardContent>
           </Card>

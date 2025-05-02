@@ -1,7 +1,7 @@
 import { NDKEvent, NDKKind } from '@nostr-dev-kit/ndk';
 import { BadgeDefinition, BadgeAward } from './types';
 
-// Helper to parse badge definition event
+// Helper to parse badge type definition event (Kind 30009)
 export const parseBadgeDefinition = (event: NDKEvent): BadgeDefinition | null => {
   const dTag = event.tagValue('d');
   // Basic validation: ensure kind is BadgeDefinition and d tag exists
@@ -19,12 +19,12 @@ export const parseBadgeDefinition = (event: NDKEvent): BadgeDefinition | null =>
   };
 };
 
-// Helper to parse badge award event
+// Helper to parse badge award event (Kind 8)
 export const parseBadgeAward = (event: NDKEvent): BadgeAward | null => {
   // Basic validation: ensure kind is BadgeAward
   if (event.kind !== NDKKind.BadgeAward) return null;
 
-  // Find the 'a' tag pointing to a BadgeDefinition
+  // Find the 'a' tag pointing to a BadgeDefinition (badge type)
   const aTag = event.tags.find(t =>
     t[0] === 'a' &&
     t[1]?.startsWith(`${NDKKind.BadgeDefinition}:`) &&
@@ -40,7 +40,7 @@ export const parseBadgeAward = (event: NDKEvent): BadgeAward | null => {
     id: event.id,
     awarder: event.pubkey,
     recipient: pTag[1], // Recipient pubkey from the 'p' tag
-    definitionEventId: aTag[1], // Coordinate: <kind>:<pubkey>:<d>
+    definitionEventId: aTag[1], // Coordinate: <kind>:<pubkey>:<d> (points to the badge type definition)
     awardedAt: event.created_at ?? 0,
     event: event,
   };
