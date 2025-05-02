@@ -1,5 +1,5 @@
-import { AwardIcon, PlusIcon, Image as ImageIcon, Loader2 } from 'lucide-react';
-import { NDKEvent, NDKFilter, NDKKind, NDKTag, NostrEvent } from '@nostr-dev-kit/ndk';
+import { AwardIcon, PlusIcon, Loader2 } from 'lucide-react';
+import { NDKEvent, NDKFilter, NDKKind, NDKTag } from '@nostr-dev-kit/ndk';
 import { useActiveUser, useNdk } from 'nostr-hooks';
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { nip19 } from 'nostr-tools';
