@@ -1,4 +1,4 @@
-import { AwardIcon, PlusIcon, Loader2 } from 'lucide-react';
+import { AwardIcon, PlusIcon, Loader2, InfoIcon } from 'lucide-react';
 import { NDKEvent, NDKFilter, NDKKind, NDKTag } from '@nostr-dev-kit/ndk';
 import { useActiveUser, useNdk } from 'nostr-hooks';
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -22,10 +22,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
 import { Spinner } from '@/shared/components/spinner';
 import { Switch } from '@/shared/components/ui/switch';
-import { BadgeAward, BadgeDefinition } from './types';
+import { BadgeAward, BadgeDefinition, BadgeTag } from './types';
 import { parseBadgeAward, parseBadgeDefinition } from './utils';
 import { BadgeAwardItem } from './components/badge-award-item';
 import { Textarea } from '@/shared/components/ui/textarea';
+import { TagInput } from './components/tag-input';
+import { BadgeDetailModal } from './components/badge-detail-modal';
 
 const PROFILE_BADGES_KIND = 30008;
 const PROFILE_BADGES_D_TAG = 'profile_badges';
@@ -35,12 +37,15 @@ export const BadgesWidget = () => {
   const { activeUser } = useActiveUser();
   const { toast } = useToast();
   const [createDefOpen, setCreateDefOpen] = useState(false);
-  const [awardBadgeOpen, setAwardBadgeOpen] = useState(false);
   const [selectedDefinition, setSelectedDefinition] = useState<BadgeDefinition | null>(null);
+  const [selectedDefinitionForDetails, setSelectedDefinitionForDetails] = useState<BadgeDefinition | null>(null);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [awardRecipientNpub, setAwardRecipientNpub] = useState('');
   const [isPublishingDef, setIsPublishingDef] = useState(false);
   const [isPublishingAward, setIsPublishingAward] = useState(false);
   const [isTogglingVisibility, setIsTogglingVisibility] = useState<Record<string, boolean>>({});
+  const [badgeTags, setBadgeTags] = useState<BadgeTag[]>([]);
+  const [badgeHashtags, setBadgeHashtags] = useState<string[]>([]);
 
   const pubkey = activeUser?.pubkey;
 
@@ -268,6 +273,14 @@ export const BadgesWidget = () => {
       if (description) tags.push(['description', description]);
       if (image) tags.push(['image', image]);
       if (thumb) tags.push(['thumb', thumb]);
+      
+      badgeTags.forEach(tag => {
+        tags.push(['t', tag.name, tag.value]);
+      });
+      
+      badgeHashtags.forEach(hashtag => {
+        tags.push(['t', 'hashtag', hashtag]);
+      });
 
       definitionEvent.tags = tags;
 
@@ -278,6 +291,8 @@ export const BadgesWidget = () => {
         toast({ title: 'Badge Created', description: `Published to ${publishedRelays.size} relays.` });
         setCreateDefOpen(false);
         setDefinitionEvents(prev => [...prev, definitionEvent]);
+        setBadgeTags([]);
+        setBadgeHashtags([]);
       } else {
         throw new Error('Failed to publish badge type definition to any relay.');
       }
@@ -287,12 +302,19 @@ export const BadgesWidget = () => {
     } finally {
       setIsPublishingDef(false);
     }
-  }, [ndk, pubkey, toast]);
+  }, [ndk, pubkey, toast, badgeTags, badgeHashtags]);
+
+  const [awardBadgeOpen, setAwardBadgeOpen] = useState(false);
 
   const openAwardDialog = (definition: BadgeDefinition) => {
     setSelectedDefinition(definition);
     setAwardRecipientNpub('');
     setAwardBadgeOpen(true);
+  };
+  
+  const openDetailsDialog = (definition: BadgeDefinition) => {
+    setSelectedDefinitionForDetails(definition);
+    setDetailsModalOpen(true);
   };
 
   const handleAwardBadge = useCallback(async () => {
@@ -330,6 +352,12 @@ export const BadgesWidget = () => {
       if (selectedDefinition.description) tags.push(['description', selectedDefinition.description]);
       if (selectedDefinition.image) tags.push(['image', selectedDefinition.image]);
       if (selectedDefinition.thumb) tags.push(['thumb', selectedDefinition.thumb]);
+
+      if (selectedDefinition?.tags) {
+        selectedDefinition.tags.forEach(tag => {
+          tags.push(['t', tag.name, tag.value]);
+        });
+      }
 
       awardEvent.tags = tags;
 
@@ -436,7 +464,7 @@ export const BadgesWidget = () => {
               <PlusIcon className="w-4 h-4 mr-2" /> Create Badge
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Create New Badge</DialogTitle>
               <DialogDescription>Define a new type of badge that you can give to others.</DialogDescription>
@@ -463,6 +491,14 @@ export const BadgesWidget = () => {
                 <Label htmlFor="thumb">Thumbnail URL</Label>
                 <Input id="thumb" name="thumb" type="url" placeholder="https://example.com/badge_thumb.png" className="mt-1" />
               </div>
+              
+              <TagInput 
+                tags={badgeTags} 
+                onChange={setBadgeTags} 
+                hashtags={badgeHashtags} 
+                onHashtagsChange={setBadgeHashtags} 
+              />
+              
               <DialogFooter>
                 <Button type="submit" disabled={isPublishingDef}>
                   {isPublishingDef && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -474,35 +510,12 @@ export const BadgesWidget = () => {
         </Dialog>
       </div>
 
-      <Dialog open={awardBadgeOpen} onOpenChange={setAwardBadgeOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Give Badge: {selectedDefinition?.name}</DialogTitle>
-            <DialogDescription>
-              Give this badge to a user by entering their npub.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <Label htmlFor="recipientNpub">Recipient npub *</Label>
-              <Input
-                id="recipientNpub"
-                value={awardRecipientNpub}
-                onChange={(e) => setAwardRecipientNpub(e.target.value)}
-                placeholder="npub1..."
-                required
-                className="mt-1"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={handleAwardBadge} disabled={isPublishingAward}>
-              {isPublishingAward && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Give Badge
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <BadgeDetailModal 
+        open={detailsModalOpen}
+        onOpenChange={setDetailsModalOpen}
+        definition={selectedDefinitionForDetails || undefined}
+        perspective="none"
+      />
 
       <Tabs defaultValue="received" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
@@ -590,7 +603,7 @@ export const BadgesWidget = () => {
                   const awardCount = badgeTypeAwardCounts[definitionCoord] || 0;
                   return (
                     <div key={def.id} className="p-4 border border-border rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card">
-                      <div className="flex items-center gap-4 flex-grow">
+                      <div className="flex items-center gap-4 flex-grow cursor-pointer" onClick={() => openDetailsDialog(def)}>
                         {(def.thumb || def.image) && (
                           <Avatar className="w-12 h-12 hidden sm:flex flex-shrink-0">
                             <AvatarImage src={def.thumb || def.image} alt={def.name} />
@@ -598,12 +611,43 @@ export const BadgesWidget = () => {
                           </Avatar>
                         )}
                         <div className="overflow-hidden">
-                          <p className="font-semibold text-base">{def.name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-base">{def.name}</p>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6 rounded-full hover:bg-muted"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openDetailsDialog(def);
+                              }}
+                            >
+                              <InfoIcon size={14} />
+                            </Button>
+                          </div>
                           <p className="text-sm text-muted-foreground mt-1">{def.description}</p>
+                          
+                          {def.tags && def.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {def.tags.slice(0, 3).map((tag, idx) => (
+                                <span key={idx} className="text-xs px-1.5 py-0.5 bg-muted rounded-md text-muted-foreground">
+                                  {tag.name}: {tag.value}
+                                </span>
+                              ))}
+                              {def.tags.length > 3 && (
+                                <span className="text-xs px-1.5 py-0.5 bg-muted rounded-md text-muted-foreground">
+                                  +{def.tags.length - 3} more
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="flex flex-col items-start sm:items-end gap-2 flex-shrink-0 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 sm:border-l-0 border-border">
-                        <Button size="sm" onClick={() => openAwardDialog(def)}>
+                        <Button size="sm" onClick={(e) => {
+                          e.stopPropagation();
+                          openAwardDialog(def);
+                        }}>
                           <AwardIcon className="w-3 h-3 mr-1.5" /> Give Badge
                         </Button>
                         <span className="text-xs text-muted-foreground pt-1 sm:pt-0">
@@ -620,6 +664,39 @@ export const BadgesWidget = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={awardBadgeOpen} onOpenChange={setAwardBadgeOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Give Badge: {selectedDefinition?.name}</DialogTitle>
+            <DialogDescription>
+              Enter the npub of the user you want to give this badge to.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="recipient-npub" className="text-right">
+                Recipient npub
+              </Label>
+              <Input
+                id="recipient-npub"
+                value={awardRecipientNpub}
+                onChange={(e) => setAwardRecipientNpub(e.target.value)}
+                className="col-span-3"
+                placeholder="npub1..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleAwardBadge} disabled={isPublishingAward}>
+              {isPublishingAward && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Give Badge
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 };
+
