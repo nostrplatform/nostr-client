@@ -1,4 +1,4 @@
-import { CalendarIcon, HashIcon, TagIcon, User as UserIcon, X } from 'lucide-react';
+import { CalendarIcon, HashIcon, TagIcon, User as UserIcon } from 'lucide-react';
 import { useProfile } from 'nostr-hooks';
 import { nip19 } from 'nostr-tools';
 import { useMemo } from 'react';
@@ -6,13 +6,11 @@ import { Link } from 'react-router-dom';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
 import { Badge } from '@/shared/components/ui/badge';
-import { Button } from '@/shared/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from '@/shared/components/ui/dialog';
 import { Skeleton } from '@/shared/components/ui/skeleton';
 import { ellipsis } from '@/shared/utils';

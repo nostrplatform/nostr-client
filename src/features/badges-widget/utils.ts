@@ -1,4 +1,4 @@
-import { NDKEvent, NDKKind } from '@nostr-dev-kit/ndk';
+import { NDKEvent } from '@nostr-dev-kit/ndk';
 import { BadgeDefinition, BadgeAward, ProfileBadge } from './types';
 
 // NIP-58 defines badge definition as kind 30009
