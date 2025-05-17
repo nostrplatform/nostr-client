@@ -3,6 +3,7 @@ import { NDKEvent, NDKFilter, NDKKind, NDKTag } from '@nostr-dev-kit/ndk';
 import { useActiveUser, useNdk } from 'nostr-hooks';
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { nip19 } from 'nostr-tools';
+import { NDKRelaySet } from '@nostr-dev-kit/ndk';
 
 import { Button } from '@/shared/components/ui/button';
 import {
@@ -37,6 +38,11 @@ export const BadgesWidget = () => {
   const { activeUser } = useActiveUser();
   const { toast } = useToast();
   const [createDefOpen, setCreateDefOpen] = useState(false);
+  // Get stored relay list from localStorage or use default list
+  const [relays] = useState<string[]>(() => {
+    const stored = localStorage.getItem('nostr-relays');
+    return stored ? JSON.parse(stored) : ['wss://nos.lol', 'wss://relay.primal.net', 'wss://relay.nostr.band', 'wss://discovery-eu.nostria.app'];
+  });
   const [selectedDefinition, setSelectedDefinition] = useState<BadgeDefinition | null>(null);
   const [selectedDefinitionForDetails, setSelectedDefinitionForDetails] = useState<BadgeDefinition | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
@@ -282,10 +288,23 @@ export const BadgesWidget = () => {
         tags.push(['t', 'hashtag', hashtag]);
       });
 
-      definitionEvent.tags = tags;
-
-      await definitionEvent.sign();
-      const publishedRelays = await definitionEvent.publish();
+      definitionEvent.tags = tags;      await definitionEvent.sign();
+      
+      // Create a relay set with the discovery relay to ensure it's published there
+      const discoveryRelay = 'wss://discovery-eu.nostria.app';
+      let publishedRelays;
+      
+      // Make sure the discovery relay is in our list of relays to publish to
+      if (!relays.includes(discoveryRelay)) {
+        // Create a custom NDKRelaySet for publishing
+        const relayUrls = [...relays, discoveryRelay];
+        const relaySet = new NDKRelaySet(new Set(relayUrls.map(url => ndk.pool.getRelay(url))), ndk);
+        // Publish to the discovery relay and other configured relays
+        publishedRelays = await definitionEvent.publish(relaySet);
+      } else {
+        // Publish to all relays including the discovery relay
+        publishedRelays = await definitionEvent.publish();
+      }
 
       if (publishedRelays.size > 0) {
         toast({ title: 'Badge Created', description: `Published to ${publishedRelays.size} relays.` });
@@ -341,28 +360,37 @@ export const BadgesWidget = () => {
       awardEvent.created_at = Math.floor(Date.now() / 1000);
       awardEvent.content = '';
 
-      const definitionCoordinate = `${NDKKind.BadgeDefinition}:${selectedDefinition.pubkey}:${selectedDefinition.d}`;
-
+      const definitionCoordinate = `${NDKKind.BadgeDefinition}:${selectedDefinition.pubkey}:${selectedDefinition.d}`;      // Only include required reference tags in kind 8 award events
       const tags: NDKTag[] = [
-        ['a', definitionCoordinate, ndk.pool.urls()[0] ?? ''],
+        ['a', definitionCoordinate, 'wss://discovery-eu.nostria.app'],
         ['p', recipientPubkey],
-        ['d', selectedDefinition.d],
-        ['name', selectedDefinition.name || ''],
       ];
-      if (selectedDefinition.description) tags.push(['description', selectedDefinition.description]);
-      if (selectedDefinition.image) tags.push(['image', selectedDefinition.image]);
-      if (selectedDefinition.thumb) tags.push(['thumb', selectedDefinition.thumb]);
 
+      // Do not include metadata in badge award events - they should be in the definition only
+      // Custom tags can still be included as they may contain award-specific info
       if (selectedDefinition?.tags) {
         selectedDefinition.tags.forEach(tag => {
           tags.push(['t', tag.name, tag.value]);
         });
       }
 
-      awardEvent.tags = tags;
-
-      await awardEvent.sign();
-      const publishedRelays = await awardEvent.publish();
+      awardEvent.tags = tags;      await awardEvent.sign();
+      
+      // Create a relay set with the discovery relay to ensure it's published there
+      const discoveryRelay = 'wss://discovery-eu.nostria.app';
+      let publishedRelays;
+      
+      // Make sure the discovery relay is in our list of relays to publish to
+      if (!relays.includes(discoveryRelay)) {
+        // Create a custom NDKRelaySet for publishing
+        const relayUrls = [...relays, discoveryRelay];
+        const relaySet = new NDKRelaySet(new Set(relayUrls.map(url => ndk.pool.getRelay(url))), ndk);
+        // Publish to the discovery relay and other configured relays
+        publishedRelays = await awardEvent.publish(relaySet);
+      } else {
+        // Publish to all relays including the discovery relay
+        publishedRelays = await awardEvent.publish();
+      }
 
       if (publishedRelays.size > 0) {
         toast({ title: 'Badge Given!', description: `Published to ${publishedRelays.size} relays.` });
@@ -413,11 +441,25 @@ export const BadgesWidget = () => {
       updatedVisibleMap.forEach((defCoord, awardId) => {
         tags.push(['a', defCoord]);
         tags.push(['e', awardId]);
-      });
-      newListEvent.tags = tags;
+      });      newListEvent.tags = tags;
 
       await newListEvent.sign();
-      const publishedRelays = await newListEvent.publish();
+      
+      // Create a relay set with the discovery relay to ensure it's published there
+      const discoveryRelay = 'wss://discovery-eu.nostria.app';
+      let publishedRelays;
+      
+        // Make sure the discovery relay is in our list of relays to publish to
+      if (!relays.includes(discoveryRelay)) {
+        // Create a custom NDKRelaySet for publishing
+        const relayUrls = [...relays, discoveryRelay];
+        const relaySet = new NDKRelaySet(new Set(relayUrls.map(url => ndk.pool.getRelay(url))), ndk);
+        // Publish to the discovery relay and other configured relays
+        publishedRelays = await newListEvent.publish(relaySet);
+      } else {
+        // Publish to all relays including the discovery relay
+        publishedRelays = await newListEvent.publish();
+      }
 
       if (publishedRelays.size > 0) {
         toast({

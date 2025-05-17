@@ -9,10 +9,9 @@ import { useToast } from '@/shared/components/ui/use-toast';
 export const RelaysPage = () => {
   const { toast } = useToast();
   const { ndk } = useNdk();
-  const [newRelay, setNewRelay] = useState('');
-  const [relays, setRelays] = useState<string[]>(() => {
+  const [newRelay, setNewRelay] = useState('');  const [relays, setRelays] = useState<string[]>(() => {
     const stored = localStorage.getItem('nostr-relays');
-    return stored ? JSON.parse(stored) : ['wss://nos.lol', 'wss://relay.primal.net', 'wss://relay.nostr.band'];
+    return stored ? JSON.parse(stored) : ['wss://nos.lol', 'wss://relay.primal.net', 'wss://relay.nostr.band', 'wss://discovery-eu.nostria.app'];
   });
 
   const addRelay = () => {
@@ -45,8 +44,17 @@ export const RelaysPage = () => {
       description: 'The relay has been added successfully',
     });
   };
-
   const removeRelay = (relay: string) => {
+    // Prevent removal of discovery relay
+    if (relay === 'wss://discovery-eu.nostria.app') {
+      toast({
+        title: 'Cannot remove this relay',
+        description: 'The discovery relay is required for the application',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     const updatedRelays = relays.filter((r) => r !== relay);
     setRelays(updatedRelays);
     localStorage.setItem('nostr-relays', JSON.stringify(updatedRelays));
@@ -72,13 +80,21 @@ export const RelaysPage = () => {
           <PlusIcon className="w-4 h-4 mr-2" />
           Add Relay
         </Button>
-      </div>
-
-      <div className="space-y-2">
+      </div>      <div className="space-y-2">
         {relays.map((relay) => (
-          <div key={relay} className="flex items-center justify-between p-3 border rounded">
-            <span>{relay}</span>
-            <Button variant="ghost" size="sm" onClick={() => removeRelay(relay)}>
+          <div key={relay} className={`flex items-center justify-between p-3 border rounded ${relay === 'wss://discovery-eu.nostria.app' ? 'border-primary' : ''}`}>
+            <div className="flex items-center gap-2">
+              <span>{relay}</span>
+              {relay === 'wss://discovery-eu.nostria.app' && (
+                <span className="text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded">Discovery Relay</span>
+              )}
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => removeRelay(relay)}
+              className={relay === 'wss://discovery-eu.nostria.app' ? 'opacity-50' : ''}
+            >
               <TrashIcon className="w-4 h-4" />
             </Button>
           </div>
